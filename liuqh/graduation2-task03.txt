@@ -1,0 +1,1839 @@
+（3）任务3
+利用Presto 分析产生以下结果，并通过web 方式可视化：
+? 以城市为单位，统计每个城市总体消费金额 （饼状图）
+? 以天为单位，统计所有商家交易发生次数和被用户浏览次数 （曲线图）
+
+/home/bigdata/hadoop-2.7.3/command/start-dfs.sh
+
+/home/bigdata/hadoop-2.7.3/command/start-yarn.sh
+
+/home/bigdata/apache-hive-2.1.0-bin/command/start-mysql.sh
+
+/home/bigdata/apache-hive-2.1.0-bin/command/start-metastore.sh
+
+/home/bigdata/apache-hive-2.1.0-bin/command/start-hiveserver2.sh
+
+
+
+A、ETL:将shop_info、user_view、user_pay分别导入到Hive中
+----------------------------------------------------------------------------------------
+1、在hive中创建表结构（外部表）：shop_info、user_view、user_pay
+
+create external table if not exists shop_info (
+    shop_id STRING,
+    city_name STRING ,
+    location_id STRING,
+    per_pay INT ,
+    score INT,
+    comment_cnt INT ,
+    shop_level INT,
+    cate_1_name STRING ,
+    cate_2_name STRING,
+    cate_3_name STRING
+)ROW FORMAT DELIMITED
+ FIELDS TERMINATED BY ','
+ location 'hdfs://bigdata:9000/data/graduation/shop_info'
+ ;
+ 
+select * from shop_info limit 1;
+select count(*) from shop_info;
+ 
+
+SET mapreduce.framework.name=local;
+
+
+drop table if exists user_view;
+create external table if not exists user_view (
+    user_id STRING,
+    shop_id STRING,
+    time_stamp STRING
+)ROW FORMAT DELIMITED
+ FIELDS TERMINATED BY ','
+ location 'hdfs://bigdata:9000/data/graduation/user_view'
+ ;
+select * from user_view limit 1;
+select count(*) from user_view;
+
+
+
+drop table if exists user_pay;
+create external table if not exists user_pay (
+    user_id STRING,
+    shop_id STRING,
+    time_stamp STRING
+)ROW FORMAT DELIMITED
+ FIELDS TERMINATED BY ','
+ location 'hdfs://bigdata:9000/data/graduation/user_pay'
+ ;
+select * from user_pay limit 1;
+select count(*) from user_pay;
+ 
+ 
+*******************************
+[bigdata@bigdata ~]$ /home/bigdata/hadoop-2.7.3/command/start-yarn.sh
+starting yarn daemons
+starting resourcemanager, logging to /home/bigdata/hadoop-2.7.3/logs/yarn-bigdata-resourcemanager-bigdata.out
+bigdata: starting nodemanager, logging to /home/bigdata/hadoop-2.7.3/logs/yarn-bigdata-nodemanager-bigdata.out
+[bigdata@bigdata ~]$ /home/bigdata/apache-hive-2.1.0-bin/command/start-mysql.sh
+[sudo] password for bigdata:
+Starting mysqld:                                           [  OK  ]
+[bigdata@bigdata ~]$ /home/bigdata/apache-hive-2.1.0-bin/command/start-metastore.sh
+[bigdata@bigdata ~]$ /home/bigdata/apache-hive-2.1.0-bin/command/start-hiveserver2.sh
+[bigdata@bigdata ~]$ jps
+3409 DataNode
+36227 Application
+3299 NameNode
+3621 SecondaryNameNode
+46310 Jps
+45483 ResourceManager
+46092 RunJar
+45598 NodeManager
+[bigdata@bigdata ~]$
+
+
+
+
+
+[bigdata@bigdata command]$ hive
+SLF4J: Class path contains multiple SLF4J bindings.
+SLF4J: Found binding in [jar:file:/home/bigdata/apache-hive-2.1.0-bin/lib/log4j-slf4j-impl-2.4.1.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/home/bigdata/hadoop-2.7.3/share/hadoop/common/lib/slf4j-log4j12-1.7.10.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+SLF4J: Actual binding is of type [org.apache.logging.slf4j.Log4jLoggerFactory]
+
+Logging initialized using configuration in file:/home/bigdata/apache-hive-2.1.0-bin/conf/hive-log4j2.properties Async: true
+Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
+hive>
+    >
+    > create external table if not exists shop_info (
+    >     shop_id STRING,
+    >     city_name STRING ,
+    >     location_id STRING,
+    >     per_pay INT ,
+    >     score INT,
+    >     comment_cnt INT ,
+    >     shop_level INT,
+    >     cate_1_name STRING ,
+    >     cate_2_name STRING,
+    >     cate_3_name STRING
+    > )ROW FORMAT DELIMITED
+    >  FIELDS TERMINATED BY ','
+    >  location 'hdfs://bigdata:9000/data/graduation/shop_info'
+    >  ;
+OK
+Time taken: 41.928 seconds
+hive>
+    > select count(*) from shop_info;
+WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
+Query ID = bigdata_20180326030937_769aefbe-f953-4b4e-bc42-52466b541774
+Total jobs = 1
+Launching Job 1 out of 1
+Number of reduce tasks determined at compile time: 1
+In order to change the average load for a reducer (in bytes):
+  set hive.exec.reducers.bytes.per.reducer=<number>
+In order to limit the maximum number of reducers:
+  set hive.exec.reducers.max=<number>
+In order to set a constant number of reducers:
+  set mapreduce.job.reduces=<number>
+Starting Job = job_1521994807870_0003, Tracking URL = http://localhost:18088/proxy/application_1521994807870_0003/
+Kill Command = /home/bigdata/hadoop-2.7.3/bin/hadoop job  -kill job_1521994807870_0003
+Hadoop job information for Stage-1: number of mappers: 1; number of reducers: 1
+2018-03-26 03:10:30,585 Stage-1 map = 0%,  reduce = 0%
+2018-03-26 03:11:04,459 Stage-1 map = 100%,  reduce = 0%, Cumulative CPU 21.86 sec
+2018-03-26 03:11:14,375 Stage-1 map = 100%,  reduce = 100%, Cumulative CPU 28.81 sec
+MapReduce Total cumulative CPU time: 28 seconds 810 msec
+Ended Job = job_1521994807870_0003
+MapReduce Jobs Launched:
+Stage-Stage-1: Map: 1  Reduce: 1   Cumulative CPU: 28.81 sec   HDFS Read: 111953 HDFS Write: 104 SUCCESS
+Total MapReduce CPU Time Spent: 28 seconds 810 msec
+OK
+2000
+Time taken: 99.136 seconds, Fetched: 1 row(s)
+hive>
+    >
+    > select * from shop_info limit 1;
+OK
+1       湖州    885     8       4       12      2       美食    休闲茶饮        饮品/甜点
+Time taken: 0.182 seconds, Fetched: 1 row(s)
+hive>
+
+
+
+
+
+
+
+
+[bigdata@bigdata ~]$ hive
+SLF4J: Class path contains multiple SLF4J bindings.
+SLF4J: Found binding in [jar:file:/home/bigdata/apache-hive-2.1.0-bin/lib/log4j-slf4j-impl-2.4.1.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/home/bigdata/hadoop-2.7.3/share/hadoop/common/lib/slf4j-log4j12-1.7.10.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+SLF4J: Actual binding is of type [org.apache.logging.slf4j.Log4jLoggerFactory]
+
+Logging initialized using configuration in file:/home/bigdata/apache-hive-2.1.0-bin/conf/hive-log4j2.properties Async: true
+Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
+hive>
+    >
+    > show databases;
+OK
+default
+Time taken: 1.904 seconds, Fetched: 1 row(s)
+hive>
+    >
+    > select * from user_view limit 1;
+OK
+Failed with exception java.io.IOException:java.io.IOException: hdfs://bigdata:9000/data/graduation/user_view/FlumeData.1522069021720 not a SequenceFile
+Time taken: 2.028 seconds
+hive>
+    > SET mapreduce.framework.name=local;
+hive>
+    >
+    >
+    >
+    >
+    >
+    >
+    > drop table if exists user_view;
+OK
+Time taken: 0.318 seconds
+hive> create external table if not exists user_view (
+    >     user_id STRING,
+    >     shop_id STRING,
+    >     time_stamp STRING
+    > )ROW FORMAT DELIMITED
+    >  FIELDS TERMINATED BY ','
+    >  location 'hdfs://bigdata:9000/data/graduation/user_view'
+    >  ;
+OK
+Time taken: 0.214 seconds
+hive> select * from user_view limit 1;
+OK
+13201967        1197    2016-10-21 18:00:00
+Time taken: 0.219 seconds, Fetched: 1 row(s)
+hive> select count(*) from user_view;
+WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
+Query ID = bigdata_20180326063518_886b386a-3b64-4bc2-93a8-e0a0dad1b9c6
+Total jobs = 1
+Launching Job 1 out of 1
+Number of reduce tasks determined at compile time: 1
+In order to change the average load for a reducer (in bytes):
+  set hive.exec.reducers.bytes.per.reducer=<number>
+In order to limit the maximum number of reducers:
+  set hive.exec.reducers.max=<number>
+In order to set a constant number of reducers:
+  set mapreduce.job.reduces=<number>
+Job running in-process (local Hadoop)
+2018-03-26 06:35:22,788 Stage-1 map = 0%,  reduce = 0%
+2018-03-26 06:35:27,833 Stage-1 map = 100%,  reduce = 100%
+Ended Job = job_local475625533_0001
+MapReduce Jobs Launched:
+Stage-Stage-1:  HDFS Read: 366290764 HDFS Write: 0 SUCCESS
+Total MapReduce CPU Time Spent: 0 msec
+OK
+5556715
+Time taken: 9.189 seconds, Fetched: 1 row(s)
+hive>
+
+
+
+
+
+
+[bigdata@bigdata ~]$ hive
+SLF4J: Class path contains multiple SLF4J bindings.
+SLF4J: Found binding in [jar:file:/home/bigdata/apache-hive-2.1.0-bin/lib/log4j-slf4j-impl-2.4.1.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/home/bigdata/hadoop-2.7.3/share/hadoop/common/lib/slf4j-log4j12-1.7.10.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+SLF4J: Actual binding is of type [org.apache.logging.slf4j.Log4jLoggerFactory]
+
+Logging initialized using configuration in file:/home/bigdata/apache-hive-2.1.0-bin/conf/hive-log4j2.properties Async: true
+Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
+hive>
+    >
+    >
+    > drop table if exists user_pay;
+OK
+Time taken: 2.218 seconds
+hive> create external table if not exists user_pay (
+    >     user_id STRING,
+    >     shop_id STRING,
+    >     time_stamp STRING
+    > )ROW FORMAT DELIMITED
+    >  FIELDS TERMINATED BY ','
+    >  location 'hdfs://bigdata:9000/data/graduation/user_pay'
+    >  ;
+OK
+Time taken: 0.464 seconds
+hive>
+    >
+    > select * from user_pay limit 1;
+OK
+22127870        1862    2015-12-25 17:00:00
+Time taken: 1.032 seconds, Fetched: 1 row(s)
+hive>
+    > select count(*) from user_pay;
+WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
+Query ID = bigdata_20180326161113_6ac051a3-9016-476f-bbff-1be25fe56c35
+Total jobs = 1
+Launching Job 1 out of 1
+Number of reduce tasks determined at compile time: 1
+In order to change the average load for a reducer (in bytes):
+  set hive.exec.reducers.bytes.per.reducer=<number>
+In order to limit the maximum number of reducers:
+  set hive.exec.reducers.max=<number>
+In order to set a constant number of reducers:
+  set mapreduce.job.reduces=<number>
+Starting Job = job_1522105714835_0001, Tracking URL = http://localhost:18088/proxy/application_1522105714835_0001/
+Kill Command = /home/bigdata/hadoop-2.7.3/bin/hadoop job  -kill job_1522105714835_0001
+Hadoop job information for Stage-1: number of mappers: 9; number of reducers: 1
+2018-03-26 16:11:34,552 Stage-1 map = 0%,  reduce = 0%
+2018-03-26 16:12:10,763 Stage-1 map = 8%,  reduce = 0%, Cumulative CPU 59.11 sec
+2018-03-26 16:12:11,892 Stage-1 map = 16%,  reduce = 0%, Cumulative CPU 60.74 sec
+2018-03-26 16:12:12,923 Stage-1 map = 33%,  reduce = 0%, Cumulative CPU 65.95 sec
+2018-03-26 16:12:23,623 Stage-1 map = 67%,  reduce = 0%, Cumulative CPU 87.51 sec
+2018-03-26 16:12:32,051 Stage-1 map = 78%,  reduce = 0%, Cumulative CPU 94.11 sec
+2018-03-26 16:12:33,092 Stage-1 map = 89%,  reduce = 26%, Cumulative CPU 100.88 sec
+2018-03-26 16:12:36,200 Stage-1 map = 89%,  reduce = 30%, Cumulative CPU 100.92 sec
+2018-03-26 16:12:37,226 Stage-1 map = 100%,  reduce = 30%, Cumulative CPU 106.2 sec
+2018-03-26 16:12:39,323 Stage-1 map = 100%,  reduce = 100%, Cumulative CPU 108.38 sec
+MapReduce Total cumulative CPU time: 1 minutes 48 seconds 380 msec
+Ended Job = job_1522105714835_0001
+MapReduce Jobs Launched:
+Stage-Stage-1: Map: 9  Reduce: 1   Cumulative CPU: 108.38 sec   HDFS Read: 2293242066 HDFS Write: 108 SUCCESS
+Total MapReduce CPU Time Spent: 1 minutes 48 seconds 380 msec
+OK
+69575296
+Time taken: 87.39 seconds, Fetched: 1 row(s)
+hive>
+    >
+    >
+
+
+
+***数据汇总确认：
+shop_info:    2000
+user_pay: 69575296
+user_view: 5556715
+(用户支付行为数据（约7000w 条）以及用户浏览行为数据（约500w 条）)
+
+
+
+
+
+
+
+B、利用Presto 分析产生以下结果，并通过web 方式可视化：
+? 以城市为单位，统计每个城市总体消费金额 （饼状图）
+? 以天为单位，统计所有商家交易发生次数和被用户浏览次数 （曲线图）
+----------------------------------------------------------------------------------------
+1、编写SQL：以城市为单位，统计每个城市总体消费金额 
+不排序：
+select t2.city_name as cityName, sum(per_pay) as totalPay from user_pay t1 join shop_info t2 on t1.shop_id=t2.shop_id group by t2.city_name;
+
+倒序：
+select t2.city_name as cityName, sum(per_pay) as totalPay from user_pay t1 join shop_info t2 on t1.shop_id=t2.shop_id group by t2.city_name order by totalPay desc;
+
+***********************************************************
+[bigdata@bigdata ~]$ /home/bigdata/presto-server-0.157/command/start-presto.sh
+Started as 51235
+[bigdata@bigdata ~]$ /home/bigdata/presto-server-0.157/command/start-presto-client.sh
+presto:default>
+presto:default>
+presto:default>
+presto:default> select t2.city_name as cityName, sum(per_pay) as totalPay from user_pay t1 join shop_info t2 on t1.shop_id=t2.shop_id group by t2.city_name order by totalPay desc;
+ cityName | totalPay
+----------+-----------
+ 上海     | 118558484
+ 杭州     | 103992651
+ 北京     |  54783654
+ 苏州     |  48044007
+ 南京     |  46676819
+ 广州     |  43977860
+ 武汉     |  38522742
+ 深圳     |  30470475
+ 宁波     |  23170496
+ 温州     |  20047564
+ 福州     |  18113268
+ 无锡     |  15835938
+ 成都     |  14149516
+ 金华     |  13427984
+ 绍兴     |  12824468
+ 重庆     |   9883760
+ 常州     |   8935842
+ 西安     |   8615092
+ 厦门     |   8531584
+ 南通     |   8152393
+ 合肥     |   7504418
+ 东莞     |   7498328
+ 南宁     |   6498812
+ 嘉兴     |   6396052
+ 佛山     |   6037376
+ 大连     |   5582711
+ 天津     |   5453098
+ 郑州     |   5339779
+ 济南     |   4736711
+ 青岛     |   4639883
+ 南昌     |   4510282
+ 沈阳     |   4236241
+ 扬州     |   3950490
+ 淮安     |   3589548
+ 湖州     |   3550923
+ 台州     |   3537541
+ 石家庄   |   3405044
+ 泉州     |   3397816
+ 长沙     |   3386680
+ 惠州     |   3362077
+ 哈尔滨   |   3144391
+ 衢州     |   2441385
+ 襄阳     |   2294925
+ 漳州     |   2188749
+ 贵阳     |   1891012
+ 徐州     |   1773482
+ 南平     |   1741104
+ 珠海     |   1658313
+ 舟山     |   1653421
+ 烟台     |   1569904
+ 盐城     |   1556168
+ 蚌埠     |   1512504
+ 泰州     |   1494539
+ 黄石     |   1427485
+ 江门     |   1346642
+ 天门     |   1329145
+ 孝感     |   1272265
+ 芜湖     |   1192179
+ 太原     |   1151214
+ 咸宁     |   1118616
+ 阜阳     |   1108352
+ 黄山     |   1052915
+ 乐山     |    984561
+ 镇江     |    915092
+ 株洲     |    890614
+ 宜昌     |    870589
+ 昆明     |    869973
+ 潍坊     |    852655
+ 达州     |    849699
+ 黄冈     |    848905
+ 邢台     |    845388
+ 铜陵     |    777168
+ 济宁     |    724295
+ 日照     |    723164
+ 十堰     |    684777
+ 信阳     |    676815
+ 丽水     |    675402
+ 洛阳     |    663552
+ 宁德     |    647046
+ 锦州     |    590814
+ 玉林     |    549105
+ 思茅     |    527782
+ 宿迁     |    526608
+ 通辽     |    511596
+ 中山     |    501266
+ 莆田     |    492686
+ 长治     |    482340
+ 宝鸡     |    472194
+ 抚顺     |    472160
+ 肇庆     |    442596
+ 濮阳     |    426272
+ 石河子   |    418864
+ 威海     |    388024
+ 绵阳     |    383591
+ 三亚     |    382928
+ 三明     |    382592
+ 营口     |    380692
+ 东营     |    370776
+ 葫芦岛   |    358092
+ 湛江     |    355235
+ 汉中     |    352830
+ 六安     |    349125
+ 咸阳     |    339864
+ 自贡     |    337518
+ 汕尾     |    316797
+ 荆州     |    316170
+ 上饶     |    302580
+ 辽阳     |    301717
+ 安康     |    300048
+ 荆门     |    216529
+ 保定     |    168890
+ 清远     |    157670
+ 聊城     |    151745
+ 阳江     |    141660
+ 柳州     |    137059
+ 邯郸     |    128457
+ 龙岩     |    127320
+ 淮北     |    113465
+ 德阳     |    112640
+ 张家口   |    109801
+ 梧州     |    106100
+ 廊坊     |     52576
+(122 rows)
+
+Query 20180326_233822_00002_yt7ag, FINISHED, 1 node
+Splits: 359 total, 359 done (100.00%)
+0:59 [69.6M rows, 2.14GB] [1.18M rows/s, 37.3MB/s]
+
+presto:default>
+presto:default>
+
+presto:default>
+presto:default> select t2.city_name as cityName, sum(per_pay) as totalPay from user_pay t1 join shop_info t2 on t1.shop_id=t2.shop_id group by t2.city_name;
+ cityName | totalPay
+----------+-----------
+ 广州     |  43977860
+ 佛山     |   6037376
+ 绍兴     |  12824468
+ 无锡     |  15835938
+ 温州     |  20047564
+ 珠海     |   1658313
+ 乐山     |    984561
+ 日照     |    723164
+ 廊坊     |     52576
+ 北京     |  54783654
+ 聊城     |    151745
+ 郑州     |   5339779
+ 天津     |   5453098
+ 六安     |    349125
+ 汕尾     |    316797
+ 黄冈     |    848905
+ 三明     |    382592
+ 济宁     |    724295
+ 泉州     |   3397816
+ 成都     |  14149516
+ 福州     |  18113268
+ 梧州     |    106100
+ 昆明     |    869973
+ 自贡     |    337518
+ 张家口   |    109801
+ 葫芦岛   |    358092
+ 东营     |    370776
+ 太原     |   1151214
+ 南平     |   1741104
+ 十堰     |    684777
+ 安康     |    300048
+ 湖州     |   3550923
+ 洛阳     |    663552
+ 长治     |    482340
+ 信阳     |    676815
+ 上饶     |    302580
+ 合肥     |   7504418
+ 贵阳     |   1891012
+ 台州     |   3537541
+ 徐州     |   1773482
+ 黄石     |   1427485
+ 宁德     |    647046
+ 德阳     |    112640
+ 嘉兴     |   6396052
+ 蚌埠     |   1512504
+ 长沙     |   3386680
+ 营口     |    380692
+ 天门     |   1329145
+ 濮阳     |    426272
+ 邯郸     |    128457
+ 抚顺     |    472160
+ 玉林     |    549105
+ 衢州     |   2441385
+ 株洲     |    890614
+ 莆田     |    492686
+ 淮北     |    113465
+ 扬州     |   3950490
+ 汉中     |    352830
+ 南京     |  46676819
+ 厦门     |   8531584
+ 宝鸡     |    472194
+ 济南     |   4736711
+ 锦州     |    590814
+ 阜阳     |   1108352
+ 三亚     |    382928
+ 南昌     |   4510282
+ 东莞     |   7498328
+ 盐城     |   1556168
+ 绵阳     |    383591
+ 龙岩     |    127320
+ 襄阳     |   2294925
+ 漳州     |   2188749
+ 哈尔滨   |   3144391
+ 辽阳     |    301717
+ 阳江     |    141660
+ 深圳     |  30470475
+ 上海     | 118558484
+ 通辽     |    511596
+ 咸宁     |   1118616
+ 潍坊     |    852655
+ 丽水     |    675402
+ 南宁     |   6498812
+ 武汉     |  38522742
+ 石家庄   |   3405044
+ 大连     |   5582711
+ 芜湖     |   1192179
+ 孝感     |   1272265
+ 思茅     |    527782
+ 杭州     | 103992651
+ 苏州     |  48044007
+ 重庆     |   9883760
+ 肇庆     |    442596
+ 黄山     |   1052915
+ 舟山     |   1653421
+ 烟台     |   1569904
+ 镇江     |    915092
+ 威海     |    388024
+ 荆州     |    316170
+ 保定     |    168890
+ 淮安     |   3589548
+ 惠州     |   3362077
+ 金华     |  13427984
+ 宁波     |  23170496
+ 宿迁     |    526608
+ 泰州     |   1494539
+ 沈阳     |   4236241
+ 铜陵     |    777168
+ 江门     |   1346642
+ 宜昌     |    870589
+ 中山     |    501266
+ 清远     |    157670
+ 湛江     |    355235
+ 柳州     |    137059
+ 西安     |   8615092
+ 常州     |   8935842
+ 青岛     |   4639883
+ 南通     |   8152393
+ 石河子   |    418864
+ 达州     |    849699
+ 咸阳     |    339864
+ 邢台     |    845388
+ 荆门     |    216529
+(122 rows)
+
+Query 20180326_233959_00003_yt7ag, FINISHED, 1 node
+Splits: 359 total, 359 done (100.00%)
+0:42 [69.6M rows, 2.14GB] [1.65M rows/s, 52MB/s]
+
+presto:default>
+presto:default>
+
+
+
+
+2、编写SQL：以天为单位，统计所有商家交易发生次数和被用户浏览次数
+单独统计每日交易量：
+select substr(t1.time_stamp,1,10) as day, count(*) as countPay from user_pay t1 group by substr(t1.time_stamp,1,10) order by day;
+
+单独统计每日点击量：
+select substr(t1.time_stamp,1,10) as day, count(*) as countView from user_view t1 group by substr(t1.time_stamp,1,10) order by day;
+
+
+合并统计每日交易量和点击量：
+select tpay.day as day, countPay, CASE WHEN countView is null THEN 0 ELSE countView END as countView
+from 
+(select substr(t1.time_stamp,1,10) as day, count(*) as countPay from user_pay t1 group by substr(t1.time_stamp,1,10)) as tpay
+left join 
+(select substr(t1.time_stamp,1,10) as day, count(*) as countView from user_view t1 group by substr(t1.time_stamp,1,10)) as tview
+on tpay.day = tview.day
+order by day;
+
+
+
+*******************************************************************
+presto:default> select substr(t1.time_stamp,1,10) as day, count(*) as countPay from user_pay t1 group by substr(t1.time_stamp,1,10) order by day;
+    day     | countPay
+------------+----------
+ 2015-06-26 |       66
+ 2015-06-27 |      106
+ 2015-06-28 |      146
+ 2015-06-29 |      492
+ 2015-06-30 |      598
+ 2015-07-01 |      721
+ 2015-07-02 |     1577
+ 2015-07-03 |     2084
+ 2015-07-04 |     2115
+ 2015-07-05 |     1973
+ 2015-07-06 |     1785
+ 2015-07-07 |     2005
+ 2015-07-08 |     2507
+ 2015-07-09 |     3066
+ 2015-07-10 |     3893
+ 2015-07-11 |     3367
+ 2015-07-12 |     4404
+ 2015-07-13 |     4434
+ 2015-07-14 |     4853
+ 2015-07-15 |     4812
+ 2015-07-16 |     5625
+ 2015-07-17 |    11677
+ 2015-07-18 |    16070
+ 2015-07-19 |    17266
+ 2015-07-20 |    13968
+ 2015-07-21 |    14152
+ 2015-07-22 |    15243
+ 2015-07-23 |    15615
+ 2015-07-24 |    18276
+ 2015-07-25 |    19634
+ 2015-07-26 |    18807
+ 2015-07-27 |    14813
+ 2015-07-28 |    15517
+ 2015-07-29 |    15326
+ 2015-07-30 |    15561
+ 2015-07-31 |    17267
+ 2015-08-01 |    17695
+ 2015-08-02 |    18881
+ 2015-08-03 |    15430
+ 2015-08-04 |    16981
+ 2015-08-05 |    17530
+ 2015-08-06 |    18729
+ 2015-08-07 |    21821
+ 2015-08-08 |    25015
+ 2015-08-09 |    23559
+ 2015-08-10 |    19672
+ 2015-08-11 |    23164
+ 2015-08-12 |    25043
+ 2015-08-13 |    25043
+ 2015-08-14 |    27998
+ 2015-08-15 |    30873
+ 2015-08-16 |    31460
+ 2015-08-17 |    25210
+ 2015-08-18 |    27107
+ 2015-08-19 |    29008
+ 2015-08-20 |    34869
+ 2015-08-21 |    32919
+ 2015-08-22 |    35856
+ 2015-08-23 |    36461
+ 2015-08-24 |    31290
+ 2015-08-25 |    32940
+ 2015-08-26 |    32998
+ 2015-08-27 |    34167
+ 2015-08-28 |    37318
+ 2015-08-29 |    41667
+ 2015-08-30 |    40393
+ 2015-08-31 |    32048
+ 2015-09-01 |    31078
+ 2015-09-02 |    36355
+ 2015-09-03 |    38502
+ 2015-09-04 |    38839
+ 2015-09-05 |    37215
+ 2015-09-06 |    29811
+ 2015-09-07 |    27994
+ 2015-09-08 |    29714
+ 2015-09-09 |    37299
+ 2015-09-10 |    32783
+ 2015-09-11 |    36512
+ 2015-09-12 |    41418
+ 2015-09-13 |    41156
+ 2015-09-14 |    16998
+ 2015-09-15 |    17401
+ 2015-09-16 |    18005
+ 2015-09-17 |    18169
+ 2015-09-18 |    21478
+ 2015-09-19 |    23850
+ 2015-09-20 |    22621
+ 2015-09-21 |    18408
+ 2015-09-22 |    19058
+ 2015-09-23 |    19833
+ 2015-09-24 |    22416
+ 2015-09-25 |    27715
+ 2015-09-26 |    29645
+ 2015-09-27 |    27239
+ 2015-09-28 |    27266
+ 2015-09-29 |    30864
+ 2015-09-30 |    43328
+ 2015-10-01 |    38096
+ 2015-10-02 |    38530
+ 2015-10-03 |    37773
+ 2015-10-04 |    36306
+ 2015-10-05 |    37752
+ 2015-10-06 |    40747
+ 2015-10-07 |    41989
+ 2015-10-08 |    36931
+ 2015-10-09 |    40972
+ 2015-10-10 |    46519
+ 2015-10-11 |    53048
+ 2015-10-12 |    47752
+ 2015-10-13 |    50603
+ 2015-10-14 |    52182
+ 2015-10-15 |    54558
+ 2015-10-16 |    63286
+ 2015-10-17 |    66234
+ 2015-10-18 |    64730
+ 2015-10-19 |    55380
+ 2015-10-20 |    57340
+ 2015-10-21 |    60015
+ 2015-10-22 |    60635
+ 2015-10-23 |    67549
+ 2015-10-24 |    71392
+ 2015-10-25 |    69466
+ 2015-10-26 |    61342
+ 2015-10-27 |    60128
+ 2015-10-28 |    65496
+ 2015-10-29 |    54451
+ 2015-10-30 |    62805
+ 2015-10-31 |    66151
+ 2015-11-01 |    65391
+ 2015-11-02 |    64874
+ 2015-11-03 |    65104
+ 2015-11-04 |    66394
+ 2015-11-05 |    68270
+ 2015-11-06 |    79478
+ 2015-11-07 |    81851
+ 2015-11-08 |    77774
+ 2015-11-09 |    66918
+ 2015-11-10 |    69388
+ 2015-11-11 |    76746
+ 2015-11-12 |    67687
+ 2015-11-13 |    87856
+ 2015-11-14 |    95162
+ 2015-11-15 |    94834
+ 2015-11-16 |    66072
+ 2015-11-17 |    66833
+ 2015-11-18 |    76014
+ 2015-11-19 |    76460
+ 2015-11-20 |    88133
+ 2015-11-21 |    87408
+ 2015-11-22 |    89367
+ 2015-11-23 |    78991
+ 2015-11-24 |    78942
+ 2015-11-25 |    85422
+ 2015-11-26 |    86607
+ 2015-11-27 |   104670
+ 2015-11-28 |   114884
+ 2015-11-29 |   106402
+ 2015-11-30 |    92158
+ 2015-12-01 |    75641
+ 2015-12-02 |    75530
+ 2015-12-03 |    74417
+ 2015-12-04 |    88576
+ 2015-12-05 |    88244
+ 2015-12-06 |    95664
+ 2015-12-07 |   101551
+ 2015-12-08 |   110179
+ 2015-12-09 |   105919
+ 2015-12-10 |   118762
+ 2015-12-11 |   144468
+ 2015-12-13 |   125451
+ 2015-12-14 |   100287
+ 2015-12-15 |   104452
+ 2015-12-16 |   103828
+ 2015-12-17 |   101864
+ 2015-12-18 |   120359
+ 2015-12-19 |   133653
+ 2015-12-20 |   122017
+ 2015-12-21 |   104151
+ 2015-12-22 |   103860
+ 2015-12-23 |   104416
+ 2015-12-24 |   122985
+ 2015-12-25 |   132520
+ 2015-12-26 |   131722
+ 2015-12-27 |   124926
+ 2015-12-28 |   109043
+ 2015-12-29 |   103619
+ 2015-12-30 |   107470
+ 2015-12-31 |   133365
+ 2016-01-01 |   129307
+ 2016-01-02 |   117139
+ 2016-01-03 |   116938
+ 2016-01-04 |    85599
+ 2016-01-05 |    96516
+ 2016-01-06 |   103699
+ 2016-01-07 |   103657
+ 2016-01-08 |   121417
+ 2016-01-09 |   131150
+ 2016-01-10 |   118986
+ 2016-01-11 |    97989
+ 2016-01-12 |   104515
+ 2016-01-13 |   109300
+ 2016-01-14 |   107489
+ 2016-01-15 |   121525
+ 2016-01-16 |   131742
+ 2016-01-17 |   123320
+ 2016-01-18 |   103392
+ 2016-01-19 |   105680
+ 2016-01-20 |   106809
+ 2016-01-21 |   103249
+ 2016-01-22 |   110528
+ 2016-01-23 |   119129
+ 2016-01-24 |   114138
+ 2016-01-25 |   114456
+ 2016-01-26 |   113589
+ 2016-01-27 |   110828
+ 2016-01-28 |   111002
+ 2016-01-29 |   128662
+ 2016-01-30 |   174030
+ 2016-01-31 |   172248
+ 2016-02-01 |   126156
+ 2016-02-02 |   131158
+ 2016-02-03 |   133745
+ 2016-02-04 |   134072
+ 2016-02-05 |   142847
+ 2016-02-06 |   139747
+ 2016-02-07 |    83798
+ 2016-02-08 |    81286
+ 2016-02-09 |    83030
+ 2016-02-10 |    85674
+ 2016-02-11 |    89753
+ 2016-02-12 |    94136
+ 2016-02-13 |    98266
+ 2016-02-14 |   123745
+ 2016-02-15 |   111236
+ 2016-02-16 |   112569
+ 2016-02-17 |   110931
+ 2016-02-18 |   111025
+ 2016-02-19 |   115109
+ 2016-02-20 |   127556
+ 2016-02-21 |   126601
+ 2016-02-22 |   109757
+ 2016-02-23 |   104949
+ 2016-02-24 |   109429
+ 2016-02-25 |   108800
+ 2016-02-26 |   123431
+ 2016-02-27 |   140624
+ 2016-02-28 |   142521
+ 2016-02-29 |   112667
+ 2016-03-01 |   108441
+ 2016-03-02 |   110394
+ 2016-03-03 |   111765
+ 2016-03-04 |   131713
+ 2016-03-05 |   147362
+ 2016-03-06 |   140028
+ 2016-03-07 |   109012
+ 2016-03-08 |   108120
+ 2016-03-09 |   102317
+ 2016-03-10 |   104764
+ 2016-03-11 |   124972
+ 2016-03-12 |   145072
+ 2016-03-13 |   135933
+ 2016-03-14 |   117107
+ 2016-03-15 |   117257
+ 2016-03-16 |   127631
+ 2016-03-17 |   122259
+ 2016-03-18 |   158890
+ 2016-03-19 |   175528
+ 2016-03-20 |   155645
+ 2016-03-21 |   129322
+ 2016-03-22 |   127140
+ 2016-03-23 |   132679
+ 2016-03-24 |   134117
+ 2016-03-25 |   180967
+ 2016-03-26 |   202690
+ 2016-03-27 |   181948
+ 2016-03-28 |   147349
+ 2016-03-29 |   136216
+ 2016-03-30 |   137910
+ 2016-03-31 |   144989
+ 2016-04-01 |   184268
+ 2016-04-02 |   178372
+ 2016-04-03 |   156462
+ 2016-04-04 |   150172
+ 2016-04-05 |   131578
+ 2016-04-06 |   129945
+ 2016-04-07 |   139222
+ 2016-04-08 |   174608
+ 2016-04-09 |   190478
+ 2016-04-10 |   174043
+ 2016-04-11 |   141015
+ 2016-04-12 |   135987
+ 2016-04-13 |   148050
+ 2016-04-14 |   149040
+ 2016-04-15 |   180815
+ 2016-04-16 |   189760
+ 2016-04-17 |   182491
+ 2016-04-18 |   148888
+ 2016-04-19 |   143612
+ 2016-04-20 |   138025
+ 2016-04-21 |   155675
+ 2016-04-22 |   180509
+ 2016-04-23 |   185318
+ 2016-04-24 |   176177
+ 2016-04-25 |   148184
+ 2016-04-26 |   141381
+ 2016-04-27 |   157000
+ 2016-04-28 |   170300
+ 2016-04-29 |   199480
+ 2016-04-30 |   197596
+ 2016-05-01 |   177048
+ 2016-05-02 |   161834
+ 2016-05-03 |   155183
+ 2016-05-04 |   158283
+ 2016-05-05 |   155251
+ 2016-05-06 |   192433
+ 2016-05-07 |   198812
+ 2016-05-08 |   187060
+ 2016-05-09 |   148054
+ 2016-05-10 |   158431
+ 2016-05-11 |   164230
+ 2016-05-12 |   167489
+ 2016-05-13 |   184746
+ 2016-05-14 |   202881
+ 2016-05-15 |   180062
+ 2016-05-16 |   177437
+ 2016-05-17 |   174379
+ 2016-05-18 |   177759
+ 2016-05-19 |   178877
+ 2016-05-20 |   199316
+ 2016-05-21 |   211150
+ 2016-05-22 |   216014
+ 2016-05-23 |   171759
+ 2016-05-24 |   174192
+ 2016-05-25 |   179603
+ 2016-05-26 |   172621
+ 2016-05-27 |   194890
+ 2016-05-28 |   203058
+ 2016-05-29 |   204416
+ 2016-05-30 |   178071
+ 2016-05-31 |   177296
+ 2016-06-01 |   205573
+ 2016-06-02 |   178655
+ 2016-06-03 |   193871
+ 2016-06-04 |   218807
+ 2016-06-05 |   208037
+ 2016-06-06 |   181909
+ 2016-06-07 |   183689
+ 2016-06-08 |   207903
+ 2016-06-09 |   200130
+ 2016-06-10 |   188125
+ 2016-06-11 |   191002
+ 2016-06-12 |   170008
+ 2016-06-13 |   183798
+ 2016-06-14 |   184594
+ 2016-06-15 |   192907
+ 2016-06-16 |   201194
+ 2016-06-17 |   217859
+ 2016-06-18 |   229124
+ 2016-06-19 |   219089
+ 2016-06-20 |   201039
+ 2016-06-21 |   212548
+ 2016-06-22 |   215714
+ 2016-06-23 |   231066
+ 2016-06-24 |   245979
+ 2016-06-25 |   279831
+ 2016-06-26 |   244913
+ 2016-06-27 |   209134
+ 2016-06-28 |   205259
+ 2016-06-29 |   214038
+ 2016-06-30 |   217952
+ 2016-07-01 |   225089
+ 2016-07-02 |   225106
+ 2016-07-03 |   230215
+ 2016-07-04 |   212850
+ 2016-07-05 |   215641
+ 2016-07-06 |   220697
+ 2016-07-07 |   226114
+ 2016-07-08 |   246310
+ 2016-07-09 |   239413
+ 2016-07-10 |   233490
+ 2016-07-11 |   216904
+ 2016-07-12 |   220997
+ 2016-07-13 |   218268
+ 2016-07-14 |   216506
+ 2016-07-15 |   236738
+ 2016-07-16 |   241497
+ 2016-07-17 |   240372
+ 2016-07-18 |   230578
+ 2016-07-19 |   225093
+ 2016-07-20 |   230145
+ 2016-07-21 |   239194
+ 2016-07-22 |   260015
+ 2016-07-23 |   243456
+ 2016-07-24 |   236865
+ 2016-07-25 |   243738
+ 2016-07-26 |   239712
+ 2016-07-27 |   240056
+ 2016-07-28 |   236096
+ 2016-07-29 |   250518
+ 2016-07-30 |   244098
+ 2016-07-31 |   239782
+ 2016-08-01 |   232812
+ 2016-08-02 |   215751
+ 2016-08-03 |   232466
+ 2016-08-04 |   236572
+ 2016-08-05 |   269844
+ 2016-08-06 |   256297
+ 2016-08-07 |   253259
+ 2016-08-08 |   233941
+ 2016-08-09 |   314168
+ 2016-08-10 |   277069
+ 2016-08-11 |   276343
+ 2016-08-12 |   293742
+ 2016-08-13 |   304034
+ 2016-08-14 |   294886
+ 2016-08-15 |   261619
+ 2016-08-16 |   260864
+ 2016-08-17 |   261487
+ 2016-08-18 |   271541
+ 2016-08-19 |   297035
+ 2016-08-20 |   288345
+ 2016-08-21 |   283069
+ 2016-08-22 |   274028
+ 2016-08-23 |   275692
+ 2016-08-24 |   278034
+ 2016-08-25 |   274899
+ 2016-08-26 |   289329
+ 2016-08-27 |   304564
+ 2016-08-28 |   290728
+ 2016-08-29 |   268961
+ 2016-08-30 |   268232
+ 2016-08-31 |   273140
+ 2016-09-01 |   254458
+ 2016-09-02 |   272980
+ 2016-09-03 |   292792
+ 2016-09-04 |   283436
+ 2016-09-05 |   253794
+ 2016-09-06 |   247509
+ 2016-09-07 |   250890
+ 2016-09-08 |   264809
+ 2016-09-09 |   284366
+ 2016-09-10 |   299839
+ 2016-09-11 |   281729
+ 2016-09-12 |   260360
+ 2016-09-13 |   257198
+ 2016-09-14 |   280696
+ 2016-09-15 |   257822
+ 2016-09-16 |   253448
+ 2016-09-17 |   268573
+ 2016-09-18 |   255242
+ 2016-09-19 |   246586
+ 2016-09-20 |   253536
+ 2016-09-21 |   255567
+ 2016-09-22 |   262346
+ 2016-09-23 |   292810
+ 2016-09-24 |   317372
+ 2016-09-25 |   306958
+ 2016-09-26 |   265250
+ 2016-09-27 |   267892
+ 2016-09-28 |   250618
+ 2016-09-29 |   260781
+ 2016-09-30 |   334622
+ 2016-10-01 |   295484
+ 2016-10-02 |   259895
+ 2016-10-03 |   246241
+ 2016-10-04 |   238656
+ 2016-10-05 |   245942
+ 2016-10-06 |   247404
+ 2016-10-07 |   258861
+ 2016-10-08 |   260836
+ 2016-10-09 |   268919
+ 2016-10-10 |   260086
+ 2016-10-11 |   265956
+ 2016-10-12 |   266781
+ 2016-10-13 |   269140
+ 2016-10-14 |   295033
+ 2016-10-15 |   317435
+ 2016-10-16 |   317071
+ 2016-10-17 |   271013
+ 2016-10-18 |   263851
+ 2016-10-19 |   266089
+ 2016-10-20 |   267052
+ 2016-10-21 |   281999
+ 2016-10-22 |   306582
+ 2016-10-23 |   329144
+ 2016-10-24 |   277422
+ 2016-10-25 |   275681
+ 2016-10-26 |   265103
+ 2016-10-27 |   277719
+ 2016-10-28 |   300520
+ 2016-10-29 |   321527
+ 2016-10-30 |   316687
+ 2016-10-31 |   270445
+(493 rows)
+
+Query 20180327_001122_00009_yt7ag, FINISHED, 1 node
+Splits: 316 total, 316 done (100.00%)
+0:45 [69.6M rows, 2.14GB] [1.53M rows/s, 48.2MB/s]
+
+
+
+
+
+
+
+
+
+
+presto:default>
+presto:default>
+presto:default>
+presto:default>
+presto:default> select substr(t1.time_stamp,1,10) as day, count(*) as countView from user_view t1 group by substr(t1.time_stamp,1,10) order by day;
+    day     | countView
+------------+-----------
+ 2016-06-22 |     42244
+ 2016-06-23 |     63589
+ 2016-06-24 |     71587
+ 2016-06-25 |    111912
+ 2016-06-26 |     51091
+ 2016-06-27 |     36920
+ 2016-06-28 |     42162
+ 2016-06-29 |     38979
+ 2016-06-30 |     37886
+ 2016-07-01 |     38369
+ 2016-07-02 |     39490
+ 2016-07-03 |     37169
+ 2016-07-04 |     31715
+ 2016-07-05 |     31162
+ 2016-07-06 |     31969
+ 2016-07-07 |     44089
+ 2016-07-08 |     33192
+ 2016-07-09 |     34535
+ 2016-07-10 |     35545
+ 2016-07-11 |     30419
+ 2016-07-12 |     30140
+ 2016-07-13 |     31350
+ 2016-07-14 |     31038
+ 2016-07-15 |     31864
+ 2016-07-16 |     40009
+ 2016-07-17 |     39206
+ 2016-07-18 |     43440
+ 2016-07-19 |     45723
+ 2016-07-20 |     45990
+ 2016-07-21 |     46449
+ 2016-07-23 |     42336
+ 2016-07-24 |     40316
+ 2016-07-26 |     48079
+ 2016-07-27 |     47895
+ 2016-07-28 |     43137
+ 2016-07-29 |     36851
+ 2016-07-30 |     32907
+ 2016-07-31 |     32261
+ 2016-08-01 |     50717
+ 2016-08-02 |     51636
+ 2016-08-03 |     54036
+ 2016-08-04 |     55015
+ 2016-08-05 |     52451
+ 2016-08-06 |     41976
+ 2016-08-07 |     42106
+ 2016-08-08 |    161450
+ 2016-08-09 |     90543
+ 2016-08-10 |     62593
+ 2016-08-11 |     73452
+ 2016-08-12 |     64406
+ 2016-08-13 |     68728
+ 2016-08-14 |     65337
+ 2016-08-15 |     53543
+ 2016-08-16 |     52209
+ 2016-08-17 |     56061
+ 2016-08-18 |     56070
+ 2016-08-19 |     58051
+ 2016-08-20 |     50646
+ 2016-08-21 |     47801
+ 2016-08-22 |     50171
+ 2016-08-23 |     50516
+ 2016-08-24 |     51030
+ 2016-08-25 |     48060
+ 2016-08-26 |     49941
+ 2016-08-27 |     80648
+ 2016-08-28 |     50936
+ 2016-08-29 |     43631
+ 2016-08-30 |     39512
+ 2016-08-31 |     39465
+ 2016-09-01 |     38691
+ 2016-09-02 |     39810
+ 2016-09-03 |     40537
+ 2016-09-04 |     40397
+ 2016-09-05 |     40200
+ 2016-09-06 |     37567
+ 2016-09-07 |     36929
+ 2016-09-08 |     35075
+ 2016-09-09 |     37200
+ 2016-09-10 |     39726
+ 2016-09-11 |     38330
+ 2016-09-12 |     31318
+ 2016-09-13 |     29832
+ 2016-09-14 |     32208
+ 2016-09-15 |     37590
+ 2016-09-16 |     34372
+ 2016-09-17 |     31163
+ 2016-09-18 |     26612
+ 2016-09-19 |     25406
+ 2016-09-20 |     25483
+ 2016-09-21 |     25436
+ 2016-09-22 |     24173
+ 2016-09-23 |     26479
+ 2016-09-24 |     30553
+ 2016-09-25 |     32407
+ 2016-09-26 |     28319
+ 2016-09-27 |     28647
+ 2016-09-28 |     31110
+ 2016-09-29 |     33584
+ 2016-09-30 |     47894
+ 2016-10-01 |     43873
+ 2016-10-02 |     40944
+ 2016-10-03 |     38692
+ 2016-10-04 |     39105
+ 2016-10-05 |     39833
+ 2016-10-06 |     40746
+ 2016-10-07 |     44903
+ 2016-10-08 |     40871
+ 2016-10-09 |     41784
+ 2016-10-10 |     37970
+ 2016-10-11 |     38148
+ 2016-10-12 |     37426
+ 2016-10-13 |     35923
+ 2016-10-14 |     35740
+ 2016-10-15 |     38999
+ 2016-10-16 |     38248
+ 2016-10-17 |     30928
+ 2016-10-18 |     31690
+ 2016-10-19 |     32578
+ 2016-10-20 |     32206
+ 2016-10-21 |     34287
+ 2016-10-22 |     38070
+ 2016-10-23 |     34939
+ 2016-10-24 |     28126
+ 2016-10-25 |     27332
+ 2016-10-26 |     28953
+ 2016-10-27 |     32052
+ 2016-10-28 |     32023
+ 2016-10-29 |     43921
+ 2016-10-30 |     44056
+ 2016-10-31 |     39549
+(130 rows)
+
+Query 20180327_001213_00010_yt7ag, FINISHED, 1 node
+Splits: 86 total, 86 done (100.00%)
+0:11 [5.56M rows, 175MB] [514K rows/s, 16.2MB/s]
+
+presto:default>
+
+
+
+
+
+presto:default> select tpay.day as day, countPay, CASE WHEN countView is null THEN 0 ELSE countView END as countView
+             -> from
+             -> (select substr(t1.time_stamp,1,10) as day, count(*) as countPay from user_pay t1 group by substr(t1.time_stamp,1,10)) as tpay
+             -> left join
+             -> (select substr(t1.time_stamp,1,10) as day, count(*) as countView from user_view t1 group by substr(t1.time_stamp,1,10)) as tview
+             -> on tpay.day = tview.day
+             -> order by day;
+    day     | countPay | countView
+------------+----------+-----------
+ 2015-06-26 |       66 |         0
+ 2015-06-27 |      106 |         0
+ 2015-06-28 |      146 |         0
+ 2015-06-29 |      492 |         0
+ 2015-06-30 |      598 |         0
+ 2015-07-01 |      721 |         0
+ 2015-07-02 |     1577 |         0
+ 2015-07-03 |     2084 |         0
+ 2015-07-04 |     2115 |         0
+ 2015-07-05 |     1973 |         0
+ 2015-07-06 |     1785 |         0
+ 2015-07-07 |     2005 |         0
+ 2015-07-08 |     2507 |         0
+ 2015-07-09 |     3066 |         0
+ 2015-07-10 |     3893 |         0
+ 2015-07-11 |     3367 |         0
+ 2015-07-12 |     4404 |         0
+ 2015-07-13 |     4434 |         0
+ 2015-07-14 |     4853 |         0
+ 2015-07-15 |     4812 |         0
+ 2015-07-16 |     5625 |         0
+ 2015-07-17 |    11677 |         0
+ 2015-07-18 |    16070 |         0
+ 2015-07-19 |    17266 |         0
+ 2015-07-20 |    13968 |         0
+ 2015-07-21 |    14152 |         0
+ 2015-07-22 |    15243 |         0
+ 2015-07-23 |    15615 |         0
+ 2015-07-24 |    18276 |         0
+ 2015-07-25 |    19634 |         0
+ 2015-07-26 |    18807 |         0
+ 2015-07-27 |    14813 |         0
+ 2015-07-28 |    15517 |         0
+ 2015-07-29 |    15326 |         0
+ 2015-07-30 |    15561 |         0
+ 2015-07-31 |    17267 |         0
+ 2015-08-01 |    17695 |         0
+ 2015-08-02 |    18881 |         0
+ 2015-08-03 |    15430 |         0
+ 2015-08-04 |    16981 |         0
+ 2015-08-05 |    17530 |         0
+ 2015-08-06 |    18729 |         0
+ 2015-08-07 |    21821 |         0
+ 2015-08-08 |    25015 |         0
+ 2015-08-09 |    23559 |         0
+ 2015-08-10 |    19672 |         0
+ 2015-08-11 |    23164 |         0
+ 2015-08-12 |    25043 |         0
+ 2015-08-13 |    25043 |         0
+ 2015-08-14 |    27998 |         0
+ 2015-08-15 |    30873 |         0
+ 2015-08-16 |    31460 |         0
+ 2015-08-17 |    25210 |         0
+ 2015-08-18 |    27107 |         0
+ 2015-08-19 |    29008 |         0
+ 2015-08-20 |    34869 |         0
+ 2015-08-21 |    32919 |         0
+ 2015-08-22 |    35856 |         0
+ 2015-08-23 |    36461 |         0
+ 2015-08-24 |    31290 |         0
+ 2015-08-25 |    32940 |         0
+ 2015-08-26 |    32998 |         0
+ 2015-08-27 |    34167 |         0
+ 2015-08-28 |    37318 |         0
+ 2015-08-29 |    41667 |         0
+ 2015-08-30 |    40393 |         0
+ 2015-08-31 |    32048 |         0
+ 2015-09-01 |    31078 |         0
+ 2015-09-02 |    36355 |         0
+ 2015-09-03 |    38502 |         0
+ 2015-09-04 |    38839 |         0
+ 2015-09-05 |    37215 |         0
+ 2015-09-06 |    29811 |         0
+ 2015-09-07 |    27994 |         0
+ 2015-09-08 |    29714 |         0
+ 2015-09-09 |    37299 |         0
+ 2015-09-10 |    32783 |         0
+ 2015-09-11 |    36512 |         0
+ 2015-09-12 |    41418 |         0
+ 2015-09-13 |    41156 |         0
+ 2015-09-14 |    16998 |         0
+ 2015-09-15 |    17401 |         0
+ 2015-09-16 |    18005 |         0
+ 2015-09-17 |    18169 |         0
+ 2015-09-18 |    21478 |         0
+ 2015-09-19 |    23850 |         0
+ 2015-09-20 |    22621 |         0
+ 2015-09-21 |    18408 |         0
+ 2015-09-22 |    19058 |         0
+ 2015-09-23 |    19833 |         0
+ 2015-09-24 |    22416 |         0
+ 2015-09-25 |    27715 |         0
+ 2015-09-26 |    29645 |         0
+ 2015-09-27 |    27239 |         0
+ 2015-09-28 |    27266 |         0
+ 2015-09-29 |    30864 |         0
+ 2015-09-30 |    43328 |         0
+ 2015-10-01 |    38096 |         0
+ 2015-10-02 |    38530 |         0
+ 2015-10-03 |    37773 |         0
+ 2015-10-04 |    36306 |         0
+ 2015-10-05 |    37752 |         0
+ 2015-10-06 |    40747 |         0
+ 2015-10-07 |    41989 |         0
+ 2015-10-08 |    36931 |         0
+ 2015-10-09 |    40972 |         0
+ 2015-10-10 |    46519 |         0
+ 2015-10-11 |    53048 |         0
+ 2015-10-12 |    47752 |         0
+ 2015-10-13 |    50603 |         0
+ 2015-10-14 |    52182 |         0
+ 2015-10-15 |    54558 |         0
+ 2015-10-16 |    63286 |         0
+ 2015-10-17 |    66234 |         0
+ 2015-10-18 |    64730 |         0
+ 2015-10-19 |    55380 |         0
+ 2015-10-20 |    57340 |         0
+ 2015-10-21 |    60015 |         0
+ 2015-10-22 |    60635 |         0
+ 2015-10-23 |    67549 |         0
+ 2015-10-24 |    71392 |         0
+ 2015-10-25 |    69466 |         0
+ 2015-10-26 |    61342 |         0
+ 2015-10-27 |    60128 |         0
+ 2015-10-28 |    65496 |         0
+ 2015-10-29 |    54451 |         0
+ 2015-10-30 |    62805 |         0
+ 2015-10-31 |    66151 |         0
+ 2015-11-01 |    65391 |         0
+ 2015-11-02 |    64874 |         0
+ 2015-11-03 |    65104 |         0
+ 2015-11-04 |    66394 |         0
+ 2015-11-05 |    68270 |         0
+ 2015-11-06 |    79478 |         0
+ 2015-11-07 |    81851 |         0
+ 2015-11-08 |    77774 |         0
+ 2015-11-09 |    66918 |         0
+ 2015-11-10 |    69388 |         0
+ 2015-11-11 |    76746 |         0
+ 2015-11-12 |    67687 |         0
+ 2015-11-13 |    87856 |         0
+ 2015-11-14 |    95162 |         0
+ 2015-11-15 |    94834 |         0
+ 2015-11-16 |    66072 |         0
+ 2015-11-17 |    66833 |         0
+ 2015-11-18 |    76014 |         0
+ 2015-11-19 |    76460 |         0
+ 2015-11-20 |    88133 |         0
+ 2015-11-21 |    87408 |         0
+ 2015-11-22 |    89367 |         0
+ 2015-11-23 |    78991 |         0
+ 2015-11-24 |    78942 |         0
+ 2015-11-25 |    85422 |         0
+ 2015-11-26 |    86607 |         0
+ 2015-11-27 |   104670 |         0
+ 2015-11-28 |   114884 |         0
+ 2015-11-29 |   106402 |         0
+ 2015-11-30 |    92158 |         0
+ 2015-12-01 |    75641 |         0
+ 2015-12-02 |    75530 |         0
+ 2015-12-03 |    74417 |         0
+ 2015-12-04 |    88576 |         0
+ 2015-12-05 |    88244 |         0
+ 2015-12-06 |    95664 |         0
+ 2015-12-07 |   101551 |         0
+ 2015-12-08 |   110179 |         0
+ 2015-12-09 |   105919 |         0
+ 2015-12-10 |   118762 |         0
+ 2015-12-11 |   144468 |         0
+ 2015-12-13 |   125451 |         0
+ 2015-12-14 |   100287 |         0
+ 2015-12-15 |   104452 |         0
+ 2015-12-16 |   103828 |         0
+ 2015-12-17 |   101864 |         0
+ 2015-12-18 |   120359 |         0
+ 2015-12-19 |   133653 |         0
+ 2015-12-20 |   122017 |         0
+ 2015-12-21 |   104151 |         0
+ 2015-12-22 |   103860 |         0
+ 2015-12-23 |   104416 |         0
+ 2015-12-24 |   122985 |         0
+ 2015-12-25 |   132520 |         0
+ 2015-12-26 |   131722 |         0
+ 2015-12-27 |   124926 |         0
+ 2015-12-28 |   109043 |         0
+ 2015-12-29 |   103619 |         0
+ 2015-12-30 |   107470 |         0
+ 2015-12-31 |   133365 |         0
+ 2016-01-01 |   129307 |         0
+ 2016-01-02 |   117139 |         0
+ 2016-01-03 |   116938 |         0
+ 2016-01-04 |    85599 |         0
+ 2016-01-05 |    96516 |         0
+ 2016-01-06 |   103699 |         0
+ 2016-01-07 |   103657 |         0
+ 2016-01-08 |   121417 |         0
+ 2016-01-09 |   131150 |         0
+ 2016-01-10 |   118986 |         0
+ 2016-01-11 |    97989 |         0
+ 2016-01-12 |   104515 |         0
+ 2016-01-13 |   109300 |         0
+ 2016-01-14 |   107489 |         0
+ 2016-01-15 |   121525 |         0
+ 2016-01-16 |   131742 |         0
+ 2016-01-17 |   123320 |         0
+ 2016-01-18 |   103392 |         0
+ 2016-01-19 |   105680 |         0
+ 2016-01-20 |   106809 |         0
+ 2016-01-21 |   103249 |         0
+ 2016-01-22 |   110528 |         0
+ 2016-01-23 |   119129 |         0
+ 2016-01-24 |   114138 |         0
+ 2016-01-25 |   114456 |         0
+ 2016-01-26 |   113589 |         0
+ 2016-01-27 |   110828 |         0
+ 2016-01-28 |   111002 |         0
+ 2016-01-29 |   128662 |         0
+ 2016-01-30 |   174030 |         0
+ 2016-01-31 |   172248 |         0
+ 2016-02-01 |   126156 |         0
+ 2016-02-02 |   131158 |         0
+ 2016-02-03 |   133745 |         0
+ 2016-02-04 |   134072 |         0
+ 2016-02-05 |   142847 |         0
+ 2016-02-06 |   139747 |         0
+ 2016-02-07 |    83798 |         0
+ 2016-02-08 |    81286 |         0
+ 2016-02-09 |    83030 |         0
+ 2016-02-10 |    85674 |         0
+ 2016-02-11 |    89753 |         0
+ 2016-02-12 |    94136 |         0
+ 2016-02-13 |    98266 |         0
+ 2016-02-14 |   123745 |         0
+ 2016-02-15 |   111236 |         0
+ 2016-02-16 |   112569 |         0
+ 2016-02-17 |   110931 |         0
+ 2016-02-18 |   111025 |         0
+ 2016-02-19 |   115109 |         0
+ 2016-02-20 |   127556 |         0
+ 2016-02-21 |   126601 |         0
+ 2016-02-22 |   109757 |         0
+ 2016-02-23 |   104949 |         0
+ 2016-02-24 |   109429 |         0
+ 2016-02-25 |   108800 |         0
+ 2016-02-26 |   123431 |         0
+ 2016-02-27 |   140624 |         0
+ 2016-02-28 |   142521 |         0
+ 2016-02-29 |   112667 |         0
+ 2016-03-01 |   108441 |         0
+ 2016-03-02 |   110394 |         0
+ 2016-03-03 |   111765 |         0
+ 2016-03-04 |   131713 |         0
+ 2016-03-05 |   147362 |         0
+ 2016-03-06 |   140028 |         0
+ 2016-03-07 |   109012 |         0
+ 2016-03-08 |   108120 |         0
+ 2016-03-09 |   102317 |         0
+ 2016-03-10 |   104764 |         0
+ 2016-03-11 |   124972 |         0
+ 2016-03-12 |   145072 |         0
+ 2016-03-13 |   135933 |         0
+ 2016-03-14 |   117107 |         0
+ 2016-03-15 |   117257 |         0
+ 2016-03-16 |   127631 |         0
+ 2016-03-17 |   122259 |         0
+ 2016-03-18 |   158890 |         0
+ 2016-03-19 |   175528 |         0
+ 2016-03-20 |   155645 |         0
+ 2016-03-21 |   129322 |         0
+ 2016-03-22 |   127140 |         0
+ 2016-03-23 |   132679 |         0
+ 2016-03-24 |   134117 |         0
+ 2016-03-25 |   180967 |         0
+ 2016-03-26 |   202690 |         0
+ 2016-03-27 |   181948 |         0
+ 2016-03-28 |   147349 |         0
+ 2016-03-29 |   136216 |         0
+ 2016-03-30 |   137910 |         0
+ 2016-03-31 |   144989 |         0
+ 2016-04-01 |   184268 |         0
+ 2016-04-02 |   178372 |         0
+ 2016-04-03 |   156462 |         0
+ 2016-04-04 |   150172 |         0
+ 2016-04-05 |   131578 |         0
+ 2016-04-06 |   129945 |         0
+ 2016-04-07 |   139222 |         0
+ 2016-04-08 |   174608 |         0
+ 2016-04-09 |   190478 |         0
+ 2016-04-10 |   174043 |         0
+ 2016-04-11 |   141015 |         0
+ 2016-04-12 |   135987 |         0
+ 2016-04-13 |   148050 |         0
+ 2016-04-14 |   149040 |         0
+ 2016-04-15 |   180815 |         0
+ 2016-04-16 |   189760 |         0
+ 2016-04-17 |   182491 |         0
+ 2016-04-18 |   148888 |         0
+ 2016-04-19 |   143612 |         0
+ 2016-04-20 |   138025 |         0
+ 2016-04-21 |   155675 |         0
+ 2016-04-22 |   180509 |         0
+ 2016-04-23 |   185318 |         0
+ 2016-04-24 |   176177 |         0
+ 2016-04-25 |   148184 |         0
+ 2016-04-26 |   141381 |         0
+ 2016-04-27 |   157000 |         0
+ 2016-04-28 |   170300 |         0
+ 2016-04-29 |   199480 |         0
+ 2016-04-30 |   197596 |         0
+ 2016-05-01 |   177048 |         0
+ 2016-05-02 |   161834 |         0
+ 2016-05-03 |   155183 |         0
+ 2016-05-04 |   158283 |         0
+ 2016-05-05 |   155251 |         0
+ 2016-05-06 |   192433 |         0
+ 2016-05-07 |   198812 |         0
+ 2016-05-08 |   187060 |         0
+ 2016-05-09 |   148054 |         0
+ 2016-05-10 |   158431 |         0
+ 2016-05-11 |   164230 |         0
+ 2016-05-12 |   167489 |         0
+ 2016-05-13 |   184746 |         0
+ 2016-05-14 |   202881 |         0
+ 2016-05-15 |   180062 |         0
+ 2016-05-16 |   177437 |         0
+ 2016-05-17 |   174379 |         0
+ 2016-05-18 |   177759 |         0
+ 2016-05-19 |   178877 |         0
+ 2016-05-20 |   199316 |         0
+ 2016-05-21 |   211150 |         0
+ 2016-05-22 |   216014 |         0
+ 2016-05-23 |   171759 |         0
+ 2016-05-24 |   174192 |         0
+ 2016-05-25 |   179603 |         0
+ 2016-05-26 |   172621 |         0
+ 2016-05-27 |   194890 |         0
+ 2016-05-28 |   203058 |         0
+ 2016-05-29 |   204416 |         0
+ 2016-05-30 |   178071 |         0
+ 2016-05-31 |   177296 |         0
+ 2016-06-01 |   205573 |         0
+ 2016-06-02 |   178655 |         0
+ 2016-06-03 |   193871 |         0
+ 2016-06-04 |   218807 |         0
+ 2016-06-05 |   208037 |         0
+ 2016-06-06 |   181909 |         0
+ 2016-06-07 |   183689 |         0
+ 2016-06-08 |   207903 |         0
+ 2016-06-09 |   200130 |         0
+ 2016-06-10 |   188125 |         0
+ 2016-06-11 |   191002 |         0
+ 2016-06-12 |   170008 |         0
+ 2016-06-13 |   183798 |         0
+ 2016-06-14 |   184594 |         0
+ 2016-06-15 |   192907 |         0
+ 2016-06-16 |   201194 |         0
+ 2016-06-17 |   217859 |         0
+ 2016-06-18 |   229124 |         0
+ 2016-06-19 |   219089 |         0
+ 2016-06-20 |   201039 |         0
+ 2016-06-21 |   212548 |         0
+ 2016-06-22 |   215714 |     42244
+ 2016-06-23 |   231066 |     63589
+ 2016-06-24 |   245979 |     71587
+ 2016-06-25 |   279831 |    111912
+ 2016-06-26 |   244913 |     51091
+ 2016-06-27 |   209134 |     36920
+ 2016-06-28 |   205259 |     42162
+ 2016-06-29 |   214038 |     38979
+ 2016-06-30 |   217952 |     37886
+ 2016-07-01 |   225089 |     38369
+ 2016-07-02 |   225106 |     39490
+ 2016-07-03 |   230215 |     37169
+ 2016-07-04 |   212850 |     31715
+ 2016-07-05 |   215641 |     31162
+ 2016-07-06 |   220697 |     31969
+ 2016-07-07 |   226114 |     44089
+ 2016-07-08 |   246310 |     33192
+ 2016-07-09 |   239413 |     34535
+ 2016-07-10 |   233490 |     35545
+ 2016-07-11 |   216904 |     30419
+ 2016-07-12 |   220997 |     30140
+ 2016-07-13 |   218268 |     31350
+ 2016-07-14 |   216506 |     31038
+ 2016-07-15 |   236738 |     31864
+ 2016-07-16 |   241497 |     40009
+ 2016-07-17 |   240372 |     39206
+ 2016-07-18 |   230578 |     43440
+ 2016-07-19 |   225093 |     45723
+ 2016-07-20 |   230145 |     45990
+ 2016-07-21 |   239194 |     46449
+ 2016-07-22 |   260015 |         0
+ 2016-07-23 |   243456 |     42336
+ 2016-07-24 |   236865 |     40316
+ 2016-07-25 |   243738 |         0
+ 2016-07-26 |   239712 |     48079
+ 2016-07-27 |   240056 |     47895
+ 2016-07-28 |   236096 |     43137
+ 2016-07-29 |   250518 |     36851
+ 2016-07-30 |   244098 |     32907
+ 2016-07-31 |   239782 |     32261
+ 2016-08-01 |   232812 |     50717
+ 2016-08-02 |   215751 |     51636
+ 2016-08-03 |   232466 |     54036
+ 2016-08-04 |   236572 |     55015
+ 2016-08-05 |   269844 |     52451
+ 2016-08-06 |   256297 |     41976
+ 2016-08-07 |   253259 |     42106
+ 2016-08-08 |   233941 |    161450
+ 2016-08-09 |   314168 |     90543
+ 2016-08-10 |   277069 |     62593
+ 2016-08-11 |   276343 |     73452
+ 2016-08-12 |   293742 |     64406
+ 2016-08-13 |   304034 |     68728
+ 2016-08-14 |   294886 |     65337
+ 2016-08-15 |   261619 |     53543
+ 2016-08-16 |   260864 |     52209
+ 2016-08-17 |   261487 |     56061
+ 2016-08-18 |   271541 |     56070
+ 2016-08-19 |   297035 |     58051
+ 2016-08-20 |   288345 |     50646
+ 2016-08-21 |   283069 |     47801
+ 2016-08-22 |   274028 |     50171
+ 2016-08-23 |   275692 |     50516
+ 2016-08-24 |   278034 |     51030
+ 2016-08-25 |   274899 |     48060
+ 2016-08-26 |   289329 |     49941
+ 2016-08-27 |   304564 |     80648
+ 2016-08-28 |   290728 |     50936
+ 2016-08-29 |   268961 |     43631
+ 2016-08-30 |   268232 |     39512
+ 2016-08-31 |   273140 |     39465
+ 2016-09-01 |   254458 |     38691
+ 2016-09-02 |   272980 |     39810
+ 2016-09-03 |   292792 |     40537
+ 2016-09-04 |   283436 |     40397
+ 2016-09-05 |   253794 |     40200
+ 2016-09-06 |   247509 |     37567
+ 2016-09-07 |   250890 |     36929
+ 2016-09-08 |   264809 |     35075
+ 2016-09-09 |   284366 |     37200
+ 2016-09-10 |   299839 |     39726
+ 2016-09-11 |   281729 |     38330
+ 2016-09-12 |   260360 |     31318
+ 2016-09-13 |   257198 |     29832
+ 2016-09-14 |   280696 |     32208
+ 2016-09-15 |   257822 |     37590
+ 2016-09-16 |   253448 |     34372
+ 2016-09-17 |   268573 |     31163
+ 2016-09-18 |   255242 |     26612
+ 2016-09-19 |   246586 |     25406
+ 2016-09-20 |   253536 |     25483
+ 2016-09-21 |   255567 |     25436
+ 2016-09-22 |   262346 |     24173
+ 2016-09-23 |   292810 |     26479
+ 2016-09-24 |   317372 |     30553
+ 2016-09-25 |   306958 |     32407
+ 2016-09-26 |   265250 |     28319
+ 2016-09-27 |   267892 |     28647
+ 2016-09-28 |   250618 |     31110
+ 2016-09-29 |   260781 |     33584
+ 2016-09-30 |   334622 |     47894
+ 2016-10-01 |   295484 |     43873
+ 2016-10-02 |   259895 |     40944
+ 2016-10-03 |   246241 |     38692
+ 2016-10-04 |   238656 |     39105
+ 2016-10-05 |   245942 |     39833
+ 2016-10-06 |   247404 |     40746
+ 2016-10-07 |   258861 |     44903
+ 2016-10-08 |   260836 |     40871
+ 2016-10-09 |   268919 |     41784
+ 2016-10-10 |   260086 |     37970
+ 2016-10-11 |   265956 |     38148
+ 2016-10-12 |   266781 |     37426
+ 2016-10-13 |   269140 |     35923
+ 2016-10-14 |   295033 |     35740
+ 2016-10-15 |   317435 |     38999
+ 2016-10-16 |   317071 |     38248
+ 2016-10-17 |   271013 |     30928
+ 2016-10-18 |   263851 |     31690
+ 2016-10-19 |   266089 |     32578
+ 2016-10-20 |   267052 |     32206
+ 2016-10-21 |   281999 |     34287
+ 2016-10-22 |   306582 |     38070
+ 2016-10-23 |   329144 |     34939
+ 2016-10-24 |   277422 |     28126
+ 2016-10-25 |   275681 |     27332
+ 2016-10-26 |   265103 |     28953
+ 2016-10-27 |   277719 |     32052
+ 2016-10-28 |   300520 |     32023
+ 2016-10-29 |   321527 |     43921
+ 2016-10-30 |   316687 |     44056
+ 2016-10-31 |   270445 |     39549
+(493 rows)
+
+Query 20180327_002731_00012_yt7ag, FINISHED, 1 node
+Splits: 401 total, 401 done (100.00%)
+0:55 [75.1M rows, 2.31GB] [1.37M rows/s, 43.1MB/s]
+
+presto:default>
+presto:default>
+
+
+
+3、编写web程序
+[bigdata@bigdata command]$ ls -lr /home/bigdata/project2/visualization/py-echarts/
+total 24
+drwxrwxrwx. 1 root root    0 Mar 26 20:07 templates
+-rwxrwxrwx. 1 root root 2015 Mar 18 02:24 query_redis.pyc
+-rwxrwxrwx. 1 root root 1113 Mar 18 02:24 query_redis.py
+-rwxrwxrwx. 1 root root 2964 Mar 18 02:24 query_presto.pyc
+-rwxrwxrwx. 1 root root  829 Mar 26 20:19 query_presto.py
+-rwxrwxrwx. 1 root root 6978 Mar 18 02:24 models.pyc
+-rwxrwxrwx. 1 root root 7501 Mar 18 02:24 models.py
+-rwxrwxrwx. 1 root root  847 Mar 26 20:18 main.py
+[bigdata@bigdata command]$
+
+
+
+4、运行web程序并通过浏览器访问
+/home/bigdata/presto-server-0.157/command/start-presto.sh
+/home/bigdata/presto-server-0.157/command/start-presto-client.sh
+
+/home/bigdata/project2/visualization/command/start-web.sh
+
+
+[bigdata@bigdata ~]$ /home/bigdata/project2/visualization/command/start-web.sh
+ * Running on http://0.0.0.0:5001/ (Press CTRL+C to quit)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger pin code: 156-785-449
+
+
+
+

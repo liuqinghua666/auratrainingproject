@@ -1,0 +1,982 @@
+（1）任务1:将shop_info 商家数据导入到MySQL 中，user_pay 和user_view 导入到HDFS 中。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+A、将shop_info 商家数据导入到MySQL 中
+----------------------------------------------------------------------------------------
+1、将数据文件上传到：/home/bigdata/graduation/IJCAI17_dataset
+
+[bigdata@slave IJCAI17_dataset]$ pwd
+/home/bigdata/graduation/IJCAI17_dataset
+
+[bigdata@bigdata IJCAI17_dataset]$ cd /home/bigdata/graduation/IJCAI17_dataset
+[bigdata@bigdata IJCAI17_dataset]$ 
+[bigdata@bigdata IJCAI17_dataset]$ ls
+shop_info.txt  user_pay.txt  user_view.txt
+[bigdata@bigdata IJCAI17_dataset]$ 
+[bigdata@bigdata IJCAI17_dataset]$ 
+[bigdata@bigdata IJCAI17_dataset]$ ls -lrt
+total 2421404
+-rwxrwxrwx. 1 root root     102030 Dec 22  2016 shop_info.txt
+-rwxrwxrwx. 1 root root 2296273496 Dec 22  2016 user_pay.txt
+-rwxrwxrwx. 1 root root  183141282 Dec 22  2016 user_view.txt
+[bigdata@bigdata IJCAI17_dataset]$ 
+
+
+
+2、将mysql的默认编码改为uft-8
+修改/etc/ /etc/my.cnf 后service mysqld restart
+
+
+[bigdata@bigdata conf]$ more /etc/my.cnf 
+[mysqld]
+default-character-set = utf8
+character_set_server = utf8
+
+datadir=/var/lib/mysql
+socket=/var/lib/mysql/mysql.sock
+user=mysql
+# Disabling symbolic-links is recommended to prevent assorted security risks
+symbolic-links=0
+
+[mysql]
+default-character-set = utf8
+
+[mysql.server]
+default-character-set = utf8
+
+[mysqld_safe]
+default-character-set = utf8
+log-error=/var/log/mysqld.log
+pid-file=/var/run/mysqld/mysqld.pid
+
+[client]
+default-character-set = utf8
+
+
+3、在MYSQL中建库、建表：
+
+create database graduation;
+use graduation;
+CREATE TABLE IF NOT EXISTS shop_info(
+    shop_id VARCHAR(40) NOT NULL,
+    city_name VARCHAR(100) ,
+    location_id VARCHAR(40) ,
+    per_pay INT ,
+    score INT,
+    comment_cnt INT ,
+    shop_level INT,
+    cate_1_name VARCHAR(100) ,
+    cate_2_name VARCHAR(100) ,
+    cate_3_name VARCHAR(100) ,
+    PRIMARY KEY ( shop_id )
+)ENGINE=InnoDB DEFAULT CHARSET=utf8;
+********************************************************
+[bigdata@bigdata ~]$ mysql -uroot -proot 
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 19
+Server version: 5.1.73 Source distribution
+
+Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> 
+mysql> 
+mysql> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| Book               |
+| hive2              |
+| hive_13            |
+| hr                 |
+| log                |
+| metastore          |
+| movie              |
+| mysql              |
+| test               |
+| testdb             |
+| world              |
++--------------------+
+12 rows in set (0.15 sec)
+
+mysql> 
+mysql> create database graduation;
+Query OK, 1 row affected (0.00 sec)
+
+mysql> use graduation;
+Database changed
+mysql> 
+mysql> 
+mysql> 
+mysql> CREATE TABLE IF NOT EXISTS shop_info(
+    ->     shop_id VARCHAR(40) NOT NULL,
+    ->     city_name VARCHAR(100) ,
+    ->     location_id VARCHAR(40) ,
+    ->     per_pay INT ,
+    ->     score INT,
+    ->     comment_cnt INT ,
+    ->     shop_level INT,
+    ->     cate_1_name VARCHAR(100) ,
+    ->     cate_2_name VARCHAR(100) ,
+    ->     cate_3_name VARCHAR(100) ,
+    ->     PRIMARY KEY ( shop_id )
+    -> )ENGINE=InnoDB DEFAULT CHARSET=utf8;
+Query OK, 0 rows affected (0.02 sec)
+
+mysql> 
+mysql> 
+
+
+mysql> show variables like 'datadir%';
++---------------+-----------------+
+| Variable_name | Value           |
++---------------+-----------------+
+| datadir       | /var/lib/mysql/ |
++---------------+-----------------+
+1 row in set (0.00 sec)
+
+mysql>
+
+4、将shop_info.txt拷贝到数据库目录
+
+sudo cp /home/bigdata/graduation/IJCAI17_dataset/shop_info.txt /var/lib/mysql/graduation
+********************************************************
+[bigdata@bigdata IJCAI17_dataset]$ 
+[bigdata@bigdata IJCAI17_dataset]$ sudo cp /home/bigdata/graduation/IJCAI17_dataset/shop_info.txt /var/lib/mysql/graduation
+[sudo] password for bigdata: 
+[bigdata@bigdata IJCAI17_dataset]$
+[bigdata@bigdata IJCAI17_dataset]$ 
+[bigdata@bigdata IJCAI17_dataset]$ sudo ls /var/lib/mysql/graduation/
+db.opt	shop_info.frm  shop_info.txt
+[bigdata@bigdata IJCAI17_dataset]$ 
+[bigdata@bigdata IJCAI17_dataset]$ 
+
+
+
+5、数据导入shop_info表中：
+
+load data infile 'shop_info.txt' into table shop_info character set utf8 fields terminated by ',' ;
+
+select count(*) from shop_info;
+select * from shop_info limit 3;
+********************************************************
+
+mysql> 
+mysql> load data infile 'shop_info.txt' into table shop_info fields terminated by ',';
+Query OK, 2000 rows affected, 582 warnings (0.02 sec)
+Records: 2000  Deleted: 0  Skipped: 0  Warnings: 0
+
+mysql> 
+mysql> select * from shop_info limit 3;
++---------+-----------+-------------+---------+-------+-------------+------------+-----------------+--------------+---------------+
+| shop_id | city_name | location_id | per_pay | score | comment_cnt | shop_level | cate_1_name     | cate_2_name  | cate_3_name   |
++---------+-----------+-------------+---------+-------+-------------+------------+-----------------+--------------+---------------+
+| 1       | 湖州    | 885         |       8 |     4 |          12 |          2 | 美食          | 休闲茶饮 | 饮品/甜点 |
+| 10      | 孝感    | 98          |      10 |     0 |           0 |          0 | 超市便利店 | 超市       |               |
+| 100     | 南京    | 215         |       8 |     3 |          13 |          2 | 美食          | 快餐       | 西式快餐  |
++---------+-----------+-------------+---------+-------+-------------+------------+-----------------+--------------+---------------+
+3 rows in set (0.00 sec)
+
+mysql> select count(*) from shop_info;
++----------+
+| count(*) |
++----------+
+|     2000 |
++----------+
+1 row in set (0.10 sec)
+
+mysql> 
+
+
+
+6、将数据库目录中的shop_info.txt删除
+
+rm -rf /var/lib/mysql/graduation/shop_info.txt
+********************************************************
+
+[bigdata@bigdata IJCAI17_dataset]$ 
+[bigdata@bigdata IJCAI17_dataset]$ sudo rm -rf /var/lib/mysql/graduation/shop_info.txt
+[bigdata@bigdata IJCAI17_dataset]$ 
+[bigdata@bigdata IJCAI17_dataset]$ sudo ls /var/lib/mysql/graduation/
+db.opt	shop_info.frm
+[bigdata@bigdata IJCAI17_dataset]$ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+B、将user_pay 和user_view 导入到HDFS 中
+----------------------------------------------------------------------------------------
+
+1：在本地创建/tmp/logs文件夹
+mkdir /tmp/logs
+mkdir /tmp/logs/user_pay
+mkdir /tmp/logs/user_view
+********************************************************
+
+[bigdata@bigdata ~]$ 
+[bigdata@bigdata ~]$ mkdir /tmp/logs/
+[bigdata@bigdata ~]$ mkdir /tmp/logs/user_pay
+[bigdata@bigdata ~]$ mkdir /tmp/logs/user_view
+[bigdata@bigdata ~]$ 
+
+
+
+2、创建hdfs目录
+hdfs dfs -mkdir /data/
+hdfs dfs -mkdir /data/graduation
+hdfs dfs -mkdir /data/graduation/shop_info
+hdfs dfs -mkdir /data/graduation/user_view
+hdfs dfs -mkdir /data/graduation/user_pay
+********************************************************
+
+[bigdata@bigdata IJCAI17_dataset]$ hdfs dfs -mkdir /data/
+[bigdata@bigdata IJCAI17_dataset]$ hdfs dfs -mkdir /data/graduation
+[bigdata@bigdata IJCAI17_dataset]$ hdfs dfs -mkdir /data/graduation/shop_info
+[bigdata@bigdata IJCAI17_dataset]$ hdfs dfs -mkdir /data/graduation/user_view
+[bigdata@bigdata IJCAI17_dataset]$ hdfs dfs -mkdir /data/graduation/user_pay
+[bigdata@bigdata IJCAI17_dataset]$ 
+
+
+
+3、启动Flume agent user_view
+步骤1：在flume conf/目录下编写 user_view_agent.properties
+vi /home/bigdata/apache-flume-1.7.0-bin/conf/user_view_agent.properties
+##该配置产生的HDFS文件为5M
+
+UserViewAgent.sources = mysource
+UserViewAgent.channels = mychannel
+UserViewAgent.sinks = mysink
+UserViewAgent.sources.mysource.type = spooldir
+UserViewAgent.sources.mysource.channels = mychannel
+UserViewAgent.sources.mysource.spoolDir =/tmp/logs/user_view
+UserViewAgent.sinks.mysink.channel = mychannel
+UserViewAgent.sinks.mysink.type = hdfs
+UserViewAgent.sinks.mysink.hdfs.path = hdfs://bigdata:9000/data/graduation/user_view
+UserViewAgent.sinks.mysink.hdfs.batchSize = 10000
+UserViewAgent.sinks.mysink.hdfs.rollSize = 0
+UserViewAgent.sinks.mysink.hdfs.rollCount = 100000
+UserViewAgent.sinks.mysink.hdfs.fileType = DataStream
+
+UserViewAgent.sinks.mysink.hdfs.useLocalTimeStamp = true
+#UserViewAgent.channels.mychannel.type = file
+#UserViewAgent.channels.mychannel.checkpointDir= /home/bigdata/apache-flume-1.7.0-bin/dataUserViewCheckpointDir
+#UserViewAgent.channels.mychannel.dataDirs= /home/bigdata/apache-flume-1.7.0-bin/dataUserViewDir
+UserViewAgent.channels.mychannel.type = memory
+UserViewAgent.channels.mychannel.capacity = 100000
+UserViewAgent.channels.mychannel.transactionCapacity = 10000
+
+
+
+步骤2：在flume安装目录下运行以下命令启动agent：
+bin/flume-ng agent --conf conf  --conf-file conf/user_view_agent.properties --name UserViewAgent -Dflume.root.logger=DEBUG,console
+
+步骤3： 向/tmp/logs/user_view拷入文件user_view.txt
+cp /home/bigdata/graduation/IJCAI17_dataset/user_view.txt /tmp/logs/user_view/
+
+步骤4： 查看是否文件被读取导入了HDFS
+hdfs dfs -ls /data/graduation/user_view/ |wc -l
+
+步骤5： 删除临时文件
+rm /tmp/logs/user_view/*
+
+
+********************************************************
+[bigdata@bigdata apache-flume-1.7.0-bin]$
+[bigdata@bigdata apache-flume-1.7.0-bin]$
+[bigdata@bigdata apache-flume-1.7.0-bin]$
+[bigdata@bigdata apache-flume-1.7.0-bin]$ bin/flume-ng agent --conf conf  --conf-file conf/user_view_agent.properties --name UserViewAgent -Dflume.root.logger=DEBUG,console
+Info: Sourcing environment configuration script /home/bigdata/apache-flume-1.7.0-bin/conf/flume-env.sh
+Info: Including Hadoop libraries found via (/home/bigdata/hadoop-2.7.3/bin/hadoop) for HDFS access
+Info: Including HBASE libraries found via (/home/bigdata/hbase-1.2.4/bin/hbase) for HBASE access
+Info: Including Hive libraries found via (/home/bigdata/apache-hive-2.1.0-bin) for Hive access
++ exec /usr/java/jdk1.8.0_101//bin/java -Xms100m -Xmx200m -Dcom.sun.management.jmxremote -Dflume.root.logger=DEBUG,console -cp '/home/bigdata/apache-flume-1.7.0-bin/conf:/home/bigdata/apache-flume-1.7.0-bin/lib/*:/home/bigdata/hadoop-2.7.3/share/hadoop/common/hadoop-common-2.7.3.jar:/home/bigdata/hadoop-2.7.3/etc/hadoop:/home/bigdata/hadoop-2.7.3/share/hadoop/common/lib/*:/home/bigdata/hadoop-2.7.3/share/hadoop/common/*:/home/bigdata/hadoop-2.7.3/share/hadoop/hdfs:/home/bigdata/hadoop-2.7.3/share/hadoop/hdfs/lib/*:/home/bigdata/hadoop-2.7.3/share/hadoop/hdfs/*:/home/bigdata/hadoop-2.7.3/share/hadoop/yarn/lib/*:/home/bigdata/hadoop-2.7.3/share/hadoop/yarn/*:/home/bigdata/hadoop-2.7.3/share/hadoop/mapreduce/lib/*:/home/bigdata/hadoop-2.7.3/share/hadoop/mapreduce/*:/home/bigdata/hadoop-2.7.3/contrib/capacity-scheduler/*.jar:/home/bigdata/hbase-1.2.4/conf:/usr/java/jdk1.8.0_101//lib/tools.jar:/home/bigdata/hbase-1.2.4:/home/bigdata/hbase-1.2.4/lib/activation-1.1.jar:/home/bigdata/hbase-1.2.4/lib/aopalliance-1.0.jar:/home/bigdata/hbase-1.2.4/lib/apacheds-i18n-2.0.0-M15.jar:/home/bigdata/hbase-1.2.4/lib/apacheds-kerberos-codec-2.0.0-M15.jar:/home/bigdata/hbase-1.2.4/lib/api-asn1-api-1.0.0-M20.jar:/home/bigdata/hbase-1.2.4/lib/api-util-1.0.0-M20.jar:/home/bigdata/hbase-1.2.4/lib/asm-3.1.jar:/home/bigdata/hbase-1.2.4/lib/avro-1.7.4.jar:/home/bigdata/hbase-1.2.4/lib/commons-beanutils-1.7.0.jar:/home/bigdata/hbase-1.2.4/lib/commons-beanutils-core-1.8.0.jar:/home/bigdata/hbase-1.2.4/lib/commons-cli-1.2.jar:/home/bigdata/hbase-1.2.4/lib/commons-codec-1.9.jar:/home/bigdata/hbase-1.2.4/lib/commons-collections-3.2.2.jar:/home/bigdata/hbase-1.2.4/lib/commons-compress-1.4.1.jar:/home/bigdata/hbase-1.2.4/lib/commons-configuration-1.6.jar:/home/bigdata/hbase-1.2.4/lib/commons-daemon-1.0.13.jar:/home/bigdata/hbase-1.2.4/lib/commons-digester-1.8.jar:/home/bigdata/hbase-1.2.4/lib/commons-el-1.0.jar:/home/bigdata/hbase-1.2.4/lib/commons-httpclient-3.1.jar:/home/bigdata/hbase-1.2.4/lib/commons-io-2.4.jar:/home/bigdata/hbase-1.2.4/lib/commons-lang-2.6.jar:/home/bigdata/hbase-1.2.4/lib/commons-logging-1.2.jar:/home/bigdata/hbase-1.2.4/lib/commons-math-2.2.jar:/home/bigdata/hbase-1.2.4/lib/commons-math3-3.1.1.jar:/home/bigdata/hbase-1.2.4/lib/commons-net-3.1.jar:/home/bigdata/hbase-1.2.4/lib/disruptor-3.3.0.jar:/home/bigdata/hbase-1.2.4/lib/findbugs-annotations-1.3.9-1.jar:/home/bigdata/hbase-1.2.4/lib/guava-12.0.1.jar:/home/bigdata/hbase-1.2.4/lib/guice-3.0.jar:/home/bigdata/hbase-1.2.4/lib/guice-servlet-3.0.jar:/home/bigdata/hbase-1.2.4/lib/hadoop-annotations-2.5.1.jar:/home/bigdata/hbase-1.2.4/lib/hadoop-auth-2.5.1.jar:/home/bigdata/hbase-1.2.4/lib/hadoop-client-2.5.1.jar:/home/bigdata/hbase-1.2.4/lib/hadoop-common-2.5.1.jar:/home/bigdata/hbase-1.2.4/lib/hadoop-hdfs-2.5.1.jar:/home/bigdata/hbase-1.2.4/lib/hadoop-mapreduce-client-app-2.5.1.jar:/home/bigdata/hbase-1.2.4/lib/hadoop-mapreduce-client-common-2.5.1.jar:/home/bigdata/hbase-1.2.4/lib/hadoop-mapreduce-client-core-2.5.1.jar:/home/bigdata/hbase-1.2.4/lib/hadoop-mapreduce-client-jobclient-2.5.1.jar:/home/bigdata/hbase-1.2.4/lib/hadoop-mapreduce-client-shuffle-2.5.1.jar:/home/bigdata/hbase-1.2.4/lib/hadoop-yarn-api-2.5.1.jar:/home/bigdata/hbase-1.2.4/lib/hadoop-yarn-client-2.5.1.jar:/home/bigdata/hbase-1.2.4/lib/hadoop-yarn-common-2.5.1.jar:/home/bigdata/hbase-1.2.4/lib/hadoop-yarn-server-common-2.5.1.jar:/home/bigdata/hbase-1.2.4/lib/hbase-annotations-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/hbase-annotations-1.2.4-tests.jar:/home/bigdata/hbase-1.2.4/lib/hbase-client-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/hbase-common-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/hbase-common-1.2.4-tests.jar:/home/bigdata/hbase-1.2.4/lib/hbase-examples-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/hbase-external-blockcache-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/hbase-hadoop2-compat-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/hbase-hadoop-compat-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/hbase-it-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/hbase-it-1.2.4-tests.jar:/home/bigdata/hbase-1.2.4/lib/hbase-prefix-tree-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/hbase-procedure-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/hbase-protocol-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/hbase-resource-bundle-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/hbase-rest-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/hbase-server-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/hbase-server-1.2.4-tests.jar:/home/bigdata/hbase-1.2.4/lib/hbase-shell-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/hbase-thrift-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/htrace-core-3.1.0-incubating.jar:/home/bigdata/hbase-1.2.4/lib/httpclient-4.2.5.jar:/home/bigdata/hbase-1.2.4/lib/httpcore-4.4.1.jar:/home/bigdata/hbase-1.2.4/lib/jackson-core-asl-1.9.13.jar:/home/bigdata/hbase-1.2.4/lib/jackson-jaxrs-1.9.13.jar:/home/bigdata/hbase-1.2.4/lib/jackson-mapper-asl-1.9.13.jar:/home/bigdata/hbase-1.2.4/lib/jackson-xc-1.9.13.jar:/home/bigdata/hbase-1.2.4/lib/jamon-runtime-2.4.1.jar:/home/bigdata/hbase-1.2.4/lib/jasper-compiler-5.5.23.jar:/home/bigdata/hbase-1.2.4/lib/jasper-runtime-5.5.23.jar:/home/bigdata/hbase-1.2.4/lib/javax.inject-1.jar:/home/bigdata/hbase-1.2.4/lib/java-xmlbuilder-0.4.jar:/home/bigdata/hbase-1.2.4/lib/jaxb-api-2.2.2.jar:/home/bigdata/hbase-1.2.4/lib/jaxb-impl-2.2.3-1.jar:/home/bigdata/hbase-1.2.4/lib/jcodings-1.0.8.jar:/home/bigdata/hbase-1.2.4/lib/jersey-client-1.9.jar:/home/bigdata/hbase-1.2.4/lib/jersey-core-1.9.jar:/home/bigdata/hbase-1.2.4/lib/jersey-guice-1.9.jar:/home/bigdata/hbase-1.2.4/lib/jersey-json-1.9.jar:/home/bigdata/hbase-1.2.4/lib/jersey-server-1.9.jar:/home/bigdata/hbase-1.2.4/lib/jets3t-0.9.0.jar:/home/bigdata/hbase-1.2.4/lib/jettison-1.3.3.jar:/home/bigdata/hbase-1.2.4/lib/jetty-6.1.26.jar:/home/bigdata/hbase-1.2.4/lib/jetty-sslengine-6.1.26.jar:/home/bigdata/hbase-1.2.4/lib/jetty-util-6.1.26.jar:/home/bigdata/hbase-1.2.4/lib/joni-2.1.2.jar:/home/bigdata/hbase-1.2.4/lib/jruby-complete-1.6.8.jar:/home/bigdata/hbase-1.2.4/lib/jsch-0.1.42.jar:/home/bigdata/hbase-1.2.4/lib/jsp-2.1-6.1.14.jar:/home/bigdata/hbase-1.2.4/lib/jsp-api-2.1-6.1.14.jar:/home/bigdata/hbase-1.2.4/lib/junit-4.12.jar:/home/bigdata/hbase-1.2.4/lib/leveldbjni-all-1.8.jar:/home/bigdata/hbase-1.2.4/lib/libthrift-0.9.3.jar:/home/bigdata/hbase-1.2.4/lib/log4j-1.2.17.jar:/home/bigdata/hbase-1.2.4/lib/metrics-core-2.2.0.jar:/home/bigdata/hbase-1.2.4/lib/netty-all-4.0.23.Final.jar:/home/bigdata/hbase-1.2.4/lib/paranamer-2.3.jar:/home/bigdata/hbase-1.2.4/lib/protobuf-java-2.5.0.jar:/home/bigdata/hbase-1.2.4/lib/servlet-api-2.5-6.1.14.jar:/home/bigdata/hbase-1.2.4/lib/servlet-api-2.5.jar:/home/bigdata/hbase-1.2.4/lib/slf4j-api-1.7.7.jar:/home/bigdata/hbase-1.2.4/lib/slf4j-log4j12-1.7.5.jar:/home/bigdata/hbase-1.2.4/lib/snappy-java-1.0.4.1.jar:/home/bigdata/hbase-1.2.4/lib/spymemcached-2.11.6.jar:/home/bigdata/hbase-1.2.4/lib/xmlenc-0.52.jar:/home/bigdata/hbase-1.2.4/lib/xz-1.0.jar:/home/bigdata/hbase-1.2.4/lib/zookeeper-3.4.6.jar:/home/bigdata/hadoop-2.7.3/etc/hadoop:/home/bigdata/hadoop-2.7.3/share/hadoop/common/lib/*:/home/bigdata/hadoop-2.7.3/share/hadoop/common/*:/home/bigdata/hadoop-2.7.3/share/hadoop/hdfs:/home/bigdata/hadoop-2.7.3/share/hadoop/hdfs/lib/*:/home/bigdata/hadoop-2.7.3/share/hadoop/hdfs/*:/home/bigdata/hadoop-2.7.3/share/hadoop/yarn/lib/*:/home/bigdata/hadoop-2.7.3/share/hadoop/yarn/*:/home/bigdata/hadoop-2.7.3/share/hadoop/mapreduce/lib/*:/home/bigdata/hadoop-2.7.3/share/hadoop/mapreduce/*:/home/bigdata/hadoop-2.7.3/contrib/capacity-scheduler/*.jar:/home/bigdata/hbase-1.2.4/conf:/home/bigdata/apache-hive-2.1.0-bin/lib/*' -Djava.library.path=:/home/bigdata/hadoop-2.7.3/lib/native:/home/bigdata/hadoop-2.7.3/lib/native org.apache.flume.node.Application --conf-file conf/user_view_agent.properties --name UserViewAgent
+SLF4J: Class path contains multiple SLF4J bindings.
+SLF4J: Found binding in [jar:file:/home/bigdata/apache-flume-1.7.0-bin/lib/slf4j-log4j12-1.6.1.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/home/bigdata/hadoop-2.7.3/share/hadoop/common/lib/slf4j-log4j12-1.7.10.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/home/bigdata/hbase-1.2.4/lib/slf4j-log4j12-1.7.5.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/home/bigdata/apache-hive-2.1.0-bin/lib/log4j-slf4j-impl-2.4.1.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+2018-03-26 05:57:01,057 (lifecycleSupervisor-1-0) [INFO - org.apache.flume.node.PollingPropertiesFileConfigurationProvider.start(PollingPropertiesFileConfigurationProvider.java:62)] Configuration provider starting
+2018-03-26 05:57:01,064 (lifecycleSupervisor-1-0) [DEBUG - org.apache.flume.node.PollingPropertiesFileConfigurationProvider.start(PollingPropertiesFileConfigurationProvider.java:79)] Configuration provider started
+2018-03-26 05:57:01,067 (conf-file-poller-0) [DEBUG - org.apache.flume.node.PollingPropertiesFileConfigurationProvider$FileWatcherRunnable.run(PollingPropertiesFileConfigurationProvider.java:127)] Checking file:conf/user_view_agent.properties for changes
+2018-03-26 05:57:01,067 (conf-file-poller-0) [INFO - org.apache.flume.node.PollingPropertiesFileConfigurationProvider$FileWatcherRunnable.run(PollingPropertiesFileConfigurationProvider.java:134)] Reloading configuration file:conf/user_view_agent.properties
+2018-03-26 05:57:01,074 (conf-file-poller-0) [INFO - org.apache.flume.conf.FlumeConfiguration$AgentConfiguration.addProperty(FlumeConfiguration.java:1016)] Processing:mysink
+2018-03-26 05:57:01,074 (conf-file-poller-0) [DEBUG - org.apache.flume.conf.FlumeConfiguration$AgentConfiguration.addProperty(FlumeConfiguration.java:1020)] Created context for mysink: hdfs.rollSize
+2018-03-26 05:57:01,075 (conf-file-poller-0) [INFO - org.apache.flume.conf.FlumeConfiguration$AgentConfiguration.addProperty(FlumeConfiguration.java:1016)] Processing:mysink
+2018-03-26 05:57:01,076 (conf-file-poller-0) [INFO - org.apache.flume.conf.FlumeConfiguration$AgentConfiguration.addProperty(FlumeConfiguration.java:1016)] Processing:mysink
+2018-03-26 05:57:01,076 (conf-file-poller-0) [INFO - org.apache.flume.conf.FlumeConfiguration$AgentConfiguration.addProperty(FlumeConfiguration.java:1016)] Processing:mysink
+2018-03-26 05:57:01,076 (conf-file-poller-0) [INFO - org.apache.flume.conf.FlumeConfiguration$AgentConfiguration.addProperty(FlumeConfiguration.java:1016)] Processing:mysink
+2018-03-26 05:57:01,077 (conf-file-poller-0) [INFO - org.apache.flume.conf.FlumeConfiguration$AgentConfiguration.addProperty(FlumeConfiguration.java:1016)] Processing:mysink
+2018-03-26 05:57:01,077 (conf-file-poller-0) [INFO - org.apache.flume.conf.FlumeConfiguration$AgentConfiguration.addProperty(FlumeConfiguration.java:1016)] Processing:mysink
+2018-03-26 05:57:01,077 (conf-file-poller-0) [INFO - org.apache.flume.conf.FlumeConfiguration$AgentConfiguration.addProperty(FlumeConfiguration.java:1016)] Processing:mysink
+2018-03-26 05:57:01,077 (conf-file-poller-0) [INFO - org.apache.flume.conf.FlumeConfiguration$AgentConfiguration.addProperty(FlumeConfiguration.java:930)] Added sinks: mysink Agent: UserViewAgent
+2018-03-26 05:57:01,078 (conf-file-poller-0) [DEBUG - org.apache.flume.conf.FlumeConfiguration$AgentConfiguration.isValid(FlumeConfiguration.java:313)] Starting validation of configuration for agent: UserViewAgent
+2018-03-26 05:57:01,079 (conf-file-poller-0) [INFO - org.apache.flume.conf.LogPrivacyUtil.<clinit>(LogPrivacyUtil.java:51)] Logging of configuration details is disabled. To see configuration details in the log run the agent with -Dorg.apache.flume.log.printconfig=true JVM argument. Please note that this is not recommended in production systems as it may leak private information to the logfile.
+2018-03-26 05:57:01,094 (conf-file-poller-0) [DEBUG - org.apache.flume.conf.FlumeConfiguration$AgentConfiguration.validateChannels(FlumeConfiguration.java:467)] Created channel mychannel
+2018-03-26 05:57:01,124 (conf-file-poller-0) [DEBUG - org.apache.flume.conf.FlumeConfiguration$AgentConfiguration.validateSinks(FlumeConfiguration.java:674)] Creating sink: mysink using HDFS
+2018-03-26 05:57:01,135 (conf-file-poller-0) [DEBUG - org.apache.flume.conf.FlumeConfiguration.validateConfiguration(FlumeConfiguration.java:135)] Channels:mychannel
+
+2018-03-26 05:57:01,136 (conf-file-poller-0) [DEBUG - org.apache.flume.conf.FlumeConfiguration.validateConfiguration(FlumeConfiguration.java:136)] Sinks mysink
+
+2018-03-26 05:57:01,136 (conf-file-poller-0) [DEBUG - org.apache.flume.conf.FlumeConfiguration.validateConfiguration(FlumeConfiguration.java:137)] Sources mysource
+
+2018-03-26 05:57:01,137 (conf-file-poller-0) [INFO - org.apache.flume.conf.FlumeConfiguration.validateConfiguration(FlumeConfiguration.java:140)] Post-validation flume configuration contains configuration for agents: [UserViewAgent]
+2018-03-26 05:57:01,137 (conf-file-poller-0) [INFO - org.apache.flume.node.AbstractConfigurationProvider.loadChannels(AbstractConfigurationProvider.java:147)] Creating channels
+2018-03-26 05:57:01,161 (conf-file-poller-0) [INFO - org.apache.flume.channel.DefaultChannelFactory.create(DefaultChannelFactory.java:42)] Creating instance of channel mychannel type memory
+2018-03-26 05:57:01,181 (conf-file-poller-0) [INFO - org.apache.flume.node.AbstractConfigurationProvider.loadChannels(AbstractConfigurationProvider.java:201)] Created channel mychannel
+2018-03-26 05:57:01,184 (conf-file-poller-0) [INFO - org.apache.flume.source.DefaultSourceFactory.create(DefaultSourceFactory.java:41)] Creating instance of source mysource, type spooldir
+2018-03-26 05:57:01,216 (conf-file-poller-0) [INFO - org.apache.flume.sink.DefaultSinkFactory.create(DefaultSinkFactory.java:42)] Creating instance of sink: mysink, type: hdfs
+2018-03-26 05:57:01,237 (conf-file-poller-0) [INFO - org.apache.flume.node.AbstractConfigurationProvider.getConfiguration(AbstractConfigurationProvider.java:116)] Channel mychannel connected to [mysource, mysink]
+2018-03-26 05:57:01,254 (conf-file-poller-0) [INFO - org.apache.flume.node.Application.startAllComponents(Application.java:137)] Starting new configuration:{ sourceRunners:{mysource=EventDrivenSourceRunner: { source:Spool Directory source mysource: { spoolDir: /tmp/logs/user_view } }} sinkRunners:{mysink=SinkRunner: { policy:org.apache.flume.sink.DefaultSinkProcessor@1a99878b counterGroup:{ name:null counters:{} } }} channels:{mychannel=org.apache.flume.channel.MemoryChannel{name: mychannel}} }
+2018-03-26 05:57:01,271 (conf-file-poller-0) [INFO - org.apache.flume.node.Application.startAllComponents(Application.java:144)] Starting Channel mychannel
+2018-03-26 05:57:01,274 (lifecycleSupervisor-1-0) [INFO - org.apache.flume.instrumentation.MonitoredCounterGroup.register(MonitoredCounterGroup.java:119)] Monitored counter group for type: CHANNEL, name: mychannel: Successfully registered new MBean.
+2018-03-26 05:57:01,274 (lifecycleSupervisor-1-0) [INFO - org.apache.flume.instrumentation.MonitoredCounterGroup.start(MonitoredCounterGroup.java:95)] Component type: CHANNEL, name: mychannel started
+2018-03-26 05:57:01,274 (conf-file-poller-0) [INFO - org.apache.flume.node.Application.startAllComponents(Application.java:171)] Starting Sink mysink
+2018-03-26 05:57:01,276 (conf-file-poller-0) [INFO - org.apache.flume.node.Application.startAllComponents(Application.java:182)] Starting Source mysource
+2018-03-26 05:57:01,277 (lifecycleSupervisor-1-0) [INFO - org.apache.flume.source.SpoolDirectorySource.start(SpoolDirectorySource.java:83)] SpoolDirectorySource source starting with directory: /tmp/logs/user_view
+2018-03-26 05:57:01,279 (lifecycleSupervisor-1-1) [INFO - org.apache.flume.instrumentation.MonitoredCounterGroup.register(MonitoredCounterGroup.java:119)] Monitored counter group for type: SINK, name: mysink: Successfully registered new MBean.
+2018-03-26 05:57:01,279 (lifecycleSupervisor-1-1) [INFO - org.apache.flume.instrumentation.MonitoredCounterGroup.start(MonitoredCounterGroup.java:95)] Component type: SINK, name: mysink started
+2018-03-26 05:57:01,283 (SinkRunner-PollingRunner-DefaultSinkProcessor) [DEBUG - org.apache.flume.SinkRunner$PollingRunner.run(SinkRunner.java:141)] Polling sink runner starting
+2018-03-26 05:57:01,292 (lifecycleSupervisor-1-0) [DEBUG - org.apache.flume.client.avro.ReliableSpoolingFileEventReader.<init>(ReliableSpoolingFileEventReader.java:150)] Initializing ReliableSpoolingFileEventReader with directory=/tmp/logs/user_view, metaDir=.flumespool, deserializer=LINE
+2018-03-26 05:57:01,306 (lifecycleSupervisor-1-0) [DEBUG - org.apache.flume.client.avro.ReliableSpoolingFileEventReader.<init>(ReliableSpoolingFileEventReader.java:174)] Successfully created and deleted canary file: /tmp/logs/user_view/flume-spooldir-perm-check-7347071288553177311.canary
+2018-03-26 05:57:01,308 (lifecycleSupervisor-1-0) [DEBUG - org.apache.flume.source.SpoolDirectorySource.start(SpoolDirectorySource.java:118)] SpoolDirectorySource source started
+2018-03-26 05:57:01,310 (lifecycleSupervisor-1-0) [INFO - org.apache.flume.instrumentation.MonitoredCounterGroup.register(MonitoredCounterGroup.java:119)] Monitored counter group for type: SOURCE, name: mysource: Successfully registered new MBean.
+2018-03-26 05:57:01,310 (lifecycleSupervisor-1-0) [INFO - org.apache.flume.instrumentation.MonitoredCounterGroup.start(MonitoredCounterGroup.java:95)] Component type: SOURCE, name: mysource started
+2018-03-26 05:57:01,719 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.hdfs.HDFSDataStream.configure(HDFSDataStream.java:57)] Serializer = TEXT, UseRawLocalFileSystem = false
+2018-03-26 05:57:02,354 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.hdfs.BucketWriter.open(BucketWriter.java:231)] Creating hdfs://bigdata:9000/data/graduation/user_view/FlumeData.1522069021720.tmp
+2018-03-26 05:57:04,602 (hdfs-mysink-call-runner-0) [DEBUG - org.apache.flume.sink.hdfs.AbstractHDFSWriter.reflectGetNumCurrentReplicas(AbstractHDFSWriter.java:200)] Using getNumCurrentReplicas--HDFS-826
+2018-03-26 05:57:04,611 (hdfs-mysink-call-runner-0) [DEBUG - org.apache.flume.sink.hdfs.AbstractHDFSWriter.reflectGetDefaultReplication(AbstractHDFSWriter.java:228)] Using FileSystem.getDefaultReplication(Path) from HADOOP-8014
+2018-03-26 05:57:05,466 (pool-4-thread-1) [WARN - org.apache.flume.source.SpoolDirectorySource$SpoolDirectoryRunnable.run(SpoolDirectorySource.java:261)] The channel is full, and cannot write data now. The source will try again after 250 milliseconds
+2018-03-26 05:57:05,717 (pool-4-thread-1) [INFO - org.apache.flume.client.avro.ReliableSpoolingFileEventReader.readEvents(ReliableSpoolingFileEventReader.java:305)] Last read was never committed - resetting mark position.
+2018-03-26 05:57:13,029 (pool-4-thread-1) [WARN - org.apache.flume.source.SpoolDirectorySource$SpoolDirectoryRunnable.run(SpoolDirectorySource.java:261)] The channel is full, and cannot write data now. The source will try again after 250 milliseconds
+2018-03-26 05:57:13,280 (pool-4-thread-1) [INFO - org.apache.flume.client.avro.ReliableSpoolingFileEventReader.readEvents(ReliableSpoolingFileEventReader.java:305)] Last read was never committed - resetting mark position.
+2018-03-26 05:57:19,463 (pool-4-thread-1) [WARN - org.apache.flume.source.SpoolDirectorySource$SpoolDirectoryRunnable.run(SpoolDirectorySource.java:261)] The channel is full, and cannot write data now. The source will try again after 250 milliseconds
+2018-03-26 05:57:19,714 (pool-4-thread-1) [INFO - org.apache.flume.client.avro.ReliableSpoolingFileEventReader.readEvents(ReliableSpoolingFileEventReader.java:305)] Last read was never committed - resetting mark position.
+2018-03-26 05:57:22,828 (pool-4-thread-1) [WARN - org.apache.flume.source.SpoolDirectorySource$SpoolDirectoryRunnable.run(SpoolDirectorySource.java:261)] The channel is full, and cannot write data now. The source will try again after 250 milliseconds
+2018-03-26 05:57:23,079 (pool-4-thread-1) [INFO - org.apache.flume.client.avro.ReliableSpoolingFileEventReader.readEvents(ReliableSpoolingFileEventReader.java:305)] Last read was never committed - resetting mark position.
+2018-03-26 05:57:28,467 (SinkRunner-PollingRunner-DefaultSinkProcessor) [DEBUG - org.apache.flume.sink.hdfs.BucketWriter.shouldRotate(BucketWriter.java:581)] rolling: rollCount: 100000, events: 100000
+2018-03-26 05:57:28,468 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.hdfs.BucketWriter.close(BucketWriter.java:357)] Closing hdfs://bigdata:9000/data/graduation/user_view/FlumeData.1522069021720.tmp
+2018-03-26 05:57:28,601 (hdfs-mysink-call-runner-2) [INFO - org.apache.flume.sink.hdfs.BucketWriter$8.call(BucketWriter.java:618)] Renaming hdfs://bigdata:9000/data/graduation/user_view/FlumeData.1522069021720.tmp to hdfs://bigdata:9000/data/graduation/user_view/FlumeData.1522069021720
+2018-03-26 05:57:28,722 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.hdfs.BucketWriter.open(BucketWriter.java:231)] Creating hdfs://bigdata:9000/data/graduation/user_view/FlumeData.1522069021721.tmp
+2018-03-26 05:57:28,798 (hdfs-mysink-call-runner-3) [DEBUG - org.apache.flume.sink.hdfs.AbstractHDFSWriter.reflectGetNumCurrentReplicas(AbstractHDFSWriter.java:200)] Using getNumCurrentReplicas--HDFS-826
+2018-03-26 05:57:28,799 (hdfs-mysink-call-runner-3) [DEBUG - org.apache.flume.sink.hdfs.AbstractHDFSWriter.reflectGetDefaultReplication(AbstractHDFSWriter.java:228)] Using FileSystem.getDefaultReplication(Path) from HADOOP-8014
+2018-03-26 05:57:31,412 (conf-file-poller-0) [DEBUG - org.apache.flume.node.PollingPropertiesFileConfigurationProvider$FileWatcherRunnable.run(PollingPropertiesFileConfigurationProvider.java:127)] Checking file:conf/user_view_agent.properties for changes
+2018-03-26 05:57:42,670 (SinkRunner-PollingRunner-DefaultSinkProcessor) [DEBUG - org.apache.flume.sink.hdfs.BucketWriter.shouldRotate(BucketWriter.java:581)] rolling: rollCount: 100000, events: 100000
+2018-03-26 05:57:42,670 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.hdfs.BucketWriter.close(BucketWriter.java:357)] Closing hdfs://bigdata:9000/data/graduation/user_view/FlumeData.1522069021721.tmp
+2018-03-26 05:57:42,775 (hdfs-mysink-call-runner-5) [INFO - org.apache.flume.sink.hdfs.BucketWriter$8.call(BucketWriter.java:618)] Renaming hdfs://bigdata:9000/data/graduation/user_view/FlumeData.1522069021721.tmp to hdfs://bigdata:9000/data/graduation/user_view/FlumeData.1522069021721
+2018-03-26 05:57:42,869 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.hdfs.BucketWriter.open(BucketWriter.java:231)] Creating hdfs://bigdata:9000/data/graduation/user_view/FlumeData.1522069021722.tmp
+2018-03-26 05:57:42,931 (hdfs-mysink-call-runner-6) [DEBUG - org.apache.flume.sink.hdfs.AbstractHDFSWriter.reflectGetNumCurrentReplicas(AbstractHDFSWriter.java:200)] Using getNumCurrentReplicas--HDFS-826
+2018-03-26 05:57:42,931 (hdfs-mysink-call-runner-6) [DEBUG - org.apache.flume.sink.hdfs.AbstractHDFSWriter.reflectGetDefaultReplication(AbstractHDFSWriter.java:228)] Using FileSystem.getDefaultReplication(Path) from HADOOP-8014
+2018-03-26 05:57:45,762 (pool-4-thread-1) [WARN - org.apache.flume.source.SpoolDirectorySource$SpoolDirectoryRunnable.run(SpoolDirectorySource.java:261)] The channel is full, and cannot write data now. The source will try again after 250 milliseconds
+2018-03-26 05:57:46,013 (pool-4-thread-1) [INFO - org.apache.flume.client.avro.ReliableSpoolingFileEventReader.readEvents(ReliableSpoolingFileEventReader.java:305)] Last read was never committed - resetting mark position.
+2018-03-26 05:57:51,362 (pool-4-thread-1) [WARN - org.apache.flume.source.SpoolDirectorySource$SpoolDirectoryRunnable.run(SpoolDirectorySource.java:261)] The channel is full, and cannot write data now. The source will try again after 250 milliseconds
+2018-03-26 05:57:51,613 (pool-4-thread-1) [INFO - org.apache.flume.client.avro.ReliableSpoolingFileEventReader.readEvents(ReliableSpoolingFileEventReader.java:305)] Last read was never committed - resetting mark position.
+2018-03-26 05:58:01,413 (conf-file-poller-0) [DEBUG - org.apache.flume.node.PollingPropertiesFileConfigurationProvider$FileWatcherRunnable.run(PollingPropertiesFileConfigurationProvider.java:127)] Checking file:conf/user_view_agent.properties for changes
+2018-03-26 05:58:01,469 (pool-4-thread-1) [WARN - org.apache.flume.source.SpoolDirectorySource$SpoolDirectoryRunnable.run(SpoolDirectorySource.java:261)] The channel is full, and cannot write data now. The source will try again after 250 milliseconds
+2018-03-26 05:58:01,720 (pool-4-thread-1) [INFO - org.apache.flume.client.avro.ReliableSpoolingFileEventReader.readEvents(ReliableSpoolingFileEventReader.java:305)] Last read was never committed - resetting mark position.
+.................
+2018-03-26 06:28:38,908 (hdfs-mysink-call-runner-4) [INFO - org.apache.flume.sink.hdfs.BucketWriter$8.call(BucketWriter.java:618)] Renaming hdfs://bigdata:9000/data/graduation/user_view/FlumeData.1522070857151.tmp to hdfs://bigdata:9000/data/graduation/user_view/FlumeData.1522070857151
+2018-03-26 06:28:38,913 (hdfs-mysink-roll-timer-0) [INFO - org.apache.flume.sink.hdfs.HDFSEventSink$1.run(HDFSEventSink.java:382)] Writer callback called.
+2018-03-26 06:29:01,486 (conf-file-poller-0) [DEBUG - org.apache.flume.node.PollingPropertiesFileConfigurationProvider$FileWatcherRunnable.run(PollingPropertiesFileConfigurationProvider.java:127)] Checking file:conf/user_view_agent.properties for changes
+2018-03-26 06:29:31,487 (conf-file-poller-0) [DEBUG - org.apache.flume.node.PollingPropertiesFileConfigurationProvider$FileWatcherRunnable.run(PollingPropertiesFileConfigurationProvider.java:127)] Checking file:conf/user_view_agent.properties for changes
+2018-03-26 06:30:01,488 (conf-file-poller-0) [DEBUG - org.apache.flume.node.PollingPropertiesFileConfigurationProvider$FileWatcherRunnable.run(PollingPropertiesFileConfigurationProvider.java:127)] Checking file:conf/user_view_agent.properties for changes
+2018-03-26 06:30:31,489 (conf-file-poller-0) [DEBUG - org.apache.flume.node.PollingPropertiesFileConfigurationProvider$FileWatcherRunnable.run(PollingPropertiesFileConfigurationProvider.java:127)] Checking file:conf/user_view_agent.properties for changes
+2018-03-26 06:31:01,490 (conf-file-poller-0) [DEBUG - org.apache.flume.node.PollingPropertiesFileConfigurationProvider$FileWatcherRunnable.run(PollingPropertiesFileConfigurationProvider.java:127)] Checking file:conf/user_view_agent.properties for changes
+2018-03-26 06:31:31,491 (conf-file-poller-0) [DEBUG - org.apache.flume.node.PollingPropertiesFileConfigurationProvider$FileWatcherRunnable.run(PollingPropertiesFileConfigurationProvider.java:127)] Checking file:conf/user_view_agent.properties for changes
+
+
+
+[bigdata@bigdata conf]$ hdfs dfs -du -h /data/graduation/user_view/
+3.2 M  /data/graduation/user_view/FlumeData.1522069021720
+3.1 M  /data/graduation/user_view/FlumeData.1522069021721
+2.9 M  /data/graduation/user_view/FlumeData.1522069021722
+3.2 M  /data/graduation/user_view/FlumeData.1522069093043
+3.1 M  /data/graduation/user_view/FlumeData.1522069093044
+2.9 M  /data/graduation/user_view/FlumeData.1522069093045
+2.2 M  /data/graduation/user_view/FlumeData.1522069167196
+3.1 M  /data/graduation/user_view/FlumeData.1522069197378
+2.4 M  /data/graduation/user_view/FlumeData.1522069197379
+2.6 M  /data/graduation/user_view/FlumeData.1522069250555
+2.2 M  /data/graduation/user_view/FlumeData.1522069280803
+2.4 M  /data/graduation/user_view/FlumeData.1522069311022
+1.9 M  /data/graduation/user_view/FlumeData.1522069341327
+3.1 M  /data/graduation/user_view/FlumeData.1522069371555
+2.5 M  /data/graduation/user_view/FlumeData.1522069371556
+2.0 M  /data/graduation/user_view/FlumeData.1522069424398
+3.1 M  /data/graduation/user_view/FlumeData.1522069454626
+1.8 M  /data/graduation/user_view/FlumeData.1522069484823
+2.0 M  /data/graduation/user_view/FlumeData.1522069515037
+2.3 M  /data/graduation/user_view/FlumeData.1522069545309
+2.7 M  /data/graduation/user_view/FlumeData.1522069575681
+2.2 M  /data/graduation/user_view/FlumeData.1522069605879
+2.3 M  /data/graduation/user_view/FlumeData.1522069636335
+2.4 M  /data/graduation/user_view/FlumeData.1522069666733
+2.6 M  /data/graduation/user_view/FlumeData.1522069696886
+3.0 M  /data/graduation/user_view/FlumeData.1522069727078
+2.5 M  /data/graduation/user_view/FlumeData.1522069757290
+3.2 M  /data/graduation/user_view/FlumeData.1522069787476
+2.3 M  /data/graduation/user_view/FlumeData.1522069787477
+2.8 M  /data/graduation/user_view/FlumeData.1522069844364
+1.9 M  /data/graduation/user_view/FlumeData.1522069874570
+2.2 M  /data/graduation/user_view/FlumeData.1522069904806
+2.2 M  /data/graduation/user_view/FlumeData.1522069934960
+3.1 M  /data/graduation/user_view/FlumeData.1522069965203
+3.1 M  /data/graduation/user_view/FlumeData.1522069965204
+2.0 M  /data/graduation/user_view/FlumeData.1522069965205
+3.1 M  /data/graduation/user_view/FlumeData.1522070030568
+2.9 M  /data/graduation/user_view/FlumeData.1522070030569
+2.3 M  /data/graduation/user_view/FlumeData.1522070089475
+3.2 M  /data/graduation/user_view/FlumeData.1522070119693
+2.8 M  /data/graduation/user_view/FlumeData.1522070119694
+3.1 M  /data/graduation/user_view/FlumeData.1522070160074
+3.2 M  /data/graduation/user_view/FlumeData.1522070190407
+3.1 M  /data/graduation/user_view/FlumeData.1522070190408
+2.9 M  /data/graduation/user_view/FlumeData.1522070190409
+3.2 M  /data/graduation/user_view/FlumeData.1522070262674
+3.1 M  /data/graduation/user_view/FlumeData.1522070262675
+2.6 M  /data/graduation/user_view/FlumeData.1522070262676
+1.8 M  /data/graduation/user_view/FlumeData.1522070345004
+2.4 M  /data/graduation/user_view/FlumeData.1522070375255
+1.9 M  /data/graduation/user_view/FlumeData.1522070405445
+2.8 M  /data/graduation/user_view/FlumeData.1522070435765
+2.6 M  /data/graduation/user_view/FlumeData.1522070465966
+2.3 M  /data/graduation/user_view/FlumeData.1522070496177
+2.0 M  /data/graduation/user_view/FlumeData.1522070526471
+2.5 M  /data/graduation/user_view/FlumeData.1522070556703
+2.0 M  /data/graduation/user_view/FlumeData.1522070586980
+3.1 M  /data/graduation/user_view/FlumeData.1522070617160
+2.9 M  /data/graduation/user_view/FlumeData.1522070617161
+2.1 M  /data/graduation/user_view/FlumeData.1522070675513
+2.1 M  /data/graduation/user_view/FlumeData.1522070705919
+2.4 M  /data/graduation/user_view/FlumeData.1522070736141
+2.0 M  /data/graduation/user_view/FlumeData.1522070766393
+1.7 M  /data/graduation/user_view/FlumeData.1522070796732
+2.5 M  /data/graduation/user_view/FlumeData.1522070826946
+3.2 M  /data/graduation/user_view/FlumeData.1522070857149
+3.1 M  /data/graduation/user_view/FlumeData.1522070857150
+1.1 M  /data/graduation/user_view/FlumeData.1522070857151
+[bigdata@bigdata conf]$ hdfs dfs -du -h /data/graduation/user_view/ | wc -l
+68
+[bigdata@bigdata conf]$
+[bigdata@bigdata conf]$
+
+[bigdata@bigdata conf]$ ls /tmp/logs/user_view/
+user_view.txt.COMPLETED
+[bigdata@bigdata conf]$ rm /tmp/logs/user_view/*
+[bigdata@bigdata conf]$
+[bigdata@bigdata conf]$
+
+
+
+
+
+
+
+
+
+
+4、启动Flume agent user_pay
+步骤1：在flume conf/目录下编写 user_pay_agent.properties
+vi /home/bigdata/apache-flume-1.7.0-bin/conf/user_pay_agent.properties
+##该配置产生的HDFS文件为25M
+
+UserPayAgent.sources = mysource
+UserPayAgent.channels = mychannel
+UserPayAgent.sinks = mysink
+UserPayAgent.sources.mysource.type = spooldir
+UserPayAgent.sources.mysource.channels = mychannel
+UserPayAgent.sources.mysource.spoolDir =/tmp/logs/user_pay
+UserPayAgent.sinks.mysink.channel = mychannel
+UserPayAgent.sinks.mysink.type = hdfs
+UserPayAgent.sinks.mysink.hdfs.path = hdfs://bigdata:9000/data/graduation/user_pay
+UserPayAgent.sinks.mysink.hdfs.batchSize = 10000
+UserPayAgent.sinks.mysink.hdfs.rollSize = 0
+UserPayAgent.sinks.mysink.hdfs.rollCount = 1000000
+UserPayAgent.sinks.mysink.hdfs.useLocalTimeStamp = true
+UserPayAgent.sinks.mysink.hdfs.fileType = DataStream
+
+#UserPayAgent.channels.mychannel.type = file
+#UserPayAgent.channels.mychannel.checkpointDir= /home/bigdata/apache-flume-1.7.0-bin/dataUserPayCheckpointDir
+#UserPayAgent.channels.mychannel.dataDirs= /home/bigdata/apache-flume-1.7.0-bin/dataUserPayDir
+UserPayAgent.channels.mychannel.type = memory
+UserPayAgent.channels.mychannel.capacity = 100000
+UserPayAgent.channels.mychannel.transactionCapacity = 10000
+
+
+
+
+步骤2：在flume安装目录下运行以下命令启动agent：
+bin/flume-ng agent --conf conf  --conf-file conf/user_pay_agent.properties --name UserPayAgent -Dflume.root.logger=DEBUG,console
+
+步骤3： 向/tmp/logs/user_pay拷入文件user_pay.txt
+cp /home/bigdata/graduation/IJCAI17_dataset/user_pay.txt /tmp/logs/user_pay/
+
+步骤4： 查看是否文件被读取导入了HDFS
+hdfs dfs -ls /data/graduation/user_pay/ |wc -l
+
+
+步骤5： 删除临时文件
+rm /tmp/logs/user_pay/*
+
+
+
+********************************************************
+[bigdata@bigdata ~]$ clear
+[bigdata@bigdata ~]$ cp /home/bigdata/graduation/IJCAI17_dataset/user_pay.txt /tmp/logs/user_pay/
+[bigdata@bigdata ~]$ bin/flume-ng agent --conf conf  --conf-file conf/user_pay_agent.properties --name UserPayAgent -Dflume.root.logger=DEBUG,console
+-bash: bin/flume-ng: No such file or directory
+[bigdata@bigdata ~]$ cd apache-flume-1.7.0-bin/
+[bigdata@bigdata apache-flume-1.7.0-bin]$ bin/flume-ng agent --conf conf  --conf-file conf/user_pay_agent.properties --name UserPayAgent -Dflume.root.logger=DEBUG,console
+Info: Sourcing environment configuration script /home/bigdata/apache-flume-1.7.0-bin/conf/flume-env.sh
+Info: Including Hadoop libraries found via (/home/bigdata/hadoop-2.7.3/bin/hadoop) for HDFS access
+Info: Including HBASE libraries found via (/home/bigdata/hbase-1.2.4/bin/hbase) for HBASE access
+Info: Including Hive libraries found via (/home/bigdata/apache-hive-2.1.0-bin) for Hive access
++ exec /usr/java/jdk1.8.0_101//bin/java -Xms100m -Xmx200m -Dcom.sun.management.jmxremote -Dflume.root.logger=DEBUG,console -cp '/home/bigdata/apache-flume-1.7.0-bin/conf:/home/bigdata/apache-flume-1.7.0-bin/lib/*:/home/bigdata/hadoop-2.7.3/share/hadoop/common/hadoop-common-2.7.3.jar:/home/bigdata/hadoop-2.7.3/etc/hadoop:/home/bigdata/hadoop-2.7.3/share/hadoop/common/lib/*:/home/bigdata/hadoop-2.7.3/share/hadoop/common/*:/home/bigdata/hadoop-2.7.3/share/hadoop/hdfs:/home/bigdata/hadoop-2.7.3/share/hadoop/hdfs/lib/*:/home/bigdata/hadoop-2.7.3/share/hadoop/hdfs/*:/home/bigdata/hadoop-2.7.3/share/hadoop/yarn/lib/*:/home/bigdata/hadoop-2.7.3/share/hadoop/yarn/*:/home/bigdata/hadoop-2.7.3/share/hadoop/mapreduce/lib/*:/home/bigdata/hadoop-2.7.3/share/hadoop/mapreduce/*:/home/bigdata/hadoop-2.7.3/contrib/capacity-scheduler/*.jar:/home/bigdata/hbase-1.2.4/conf:/usr/java/jdk1.8.0_101//lib/tools.jar:/home/bigdata/hbase-1.2.4:/home/bigdata/hbase-1.2.4/lib/activation-1.1.jar:/home/bigdata/hbase-1.2.4/lib/aopalliance-1.0.jar:/home/bigdata/hbase-1.2.4/lib/apacheds-i18n-2.0.0-M15.jar:/home/bigdata/hbase-1.2.4/lib/apacheds-kerberos-codec-2.0.0-M15.jar:/home/bigdata/hbase-1.2.4/lib/api-asn1-api-1.0.0-M20.jar:/home/bigdata/hbase-1.2.4/lib/api-util-1.0.0-M20.jar:/home/bigdata/hbase-1.2.4/lib/asm-3.1.jar:/home/bigdata/hbase-1.2.4/lib/avro-1.7.4.jar:/home/bigdata/hbase-1.2.4/lib/commons-beanutils-1.7.0.jar:/home/bigdata/hbase-1.2.4/lib/commons-beanutils-core-1.8.0.jar:/home/bigdata/hbase-1.2.4/lib/commons-cli-1.2.jar:/home/bigdata/hbase-1.2.4/lib/commons-codec-1.9.jar:/home/bigdata/hbase-1.2.4/lib/commons-collections-3.2.2.jar:/home/bigdata/hbase-1.2.4/lib/commons-compress-1.4.1.jar:/home/bigdata/hbase-1.2.4/lib/commons-configuration-1.6.jar:/home/bigdata/hbase-1.2.4/lib/commons-daemon-1.0.13.jar:/home/bigdata/hbase-1.2.4/lib/commons-digester-1.8.jar:/home/bigdata/hbase-1.2.4/lib/commons-el-1.0.jar:/home/bigdata/hbase-1.2.4/lib/commons-httpclient-3.1.jar:/home/bigdata/hbase-1.2.4/lib/commons-io-2.4.jar:/home/bigdata/hbase-1.2.4/lib/commons-lang-2.6.jar:/home/bigdata/hbase-1.2.4/lib/commons-logging-1.2.jar:/home/bigdata/hbase-1.2.4/lib/commons-math-2.2.jar:/home/bigdata/hbase-1.2.4/lib/commons-math3-3.1.1.jar:/home/bigdata/hbase-1.2.4/lib/commons-net-3.1.jar:/home/bigdata/hbase-1.2.4/lib/disruptor-3.3.0.jar:/home/bigdata/hbase-1.2.4/lib/findbugs-annotations-1.3.9-1.jar:/home/bigdata/hbase-1.2.4/lib/guava-12.0.1.jar:/home/bigdata/hbase-1.2.4/lib/guice-3.0.jar:/home/bigdata/hbase-1.2.4/lib/guice-servlet-3.0.jar:/home/bigdata/hbase-1.2.4/lib/hadoop-annotations-2.5.1.jar:/home/bigdata/hbase-1.2.4/lib/hadoop-auth-2.5.1.jar:/home/bigdata/hbase-1.2.4/lib/hadoop-client-2.5.1.jar:/home/bigdata/hbase-1.2.4/lib/hadoop-common-2.5.1.jar:/home/bigdata/hbase-1.2.4/lib/hadoop-hdfs-2.5.1.jar:/home/bigdata/hbase-1.2.4/lib/hadoop-mapreduce-client-app-2.5.1.jar:/home/bigdata/hbase-1.2.4/lib/hadoop-mapreduce-client-common-2.5.1.jar:/home/bigdata/hbase-1.2.4/lib/hadoop-mapreduce-client-core-2.5.1.jar:/home/bigdata/hbase-1.2.4/lib/hadoop-mapreduce-client-jobclient-2.5.1.jar:/home/bigdata/hbase-1.2.4/lib/hadoop-mapreduce-client-shuffle-2.5.1.jar:/home/bigdata/hbase-1.2.4/lib/hadoop-yarn-api-2.5.1.jar:/home/bigdata/hbase-1.2.4/lib/hadoop-yarn-client-2.5.1.jar:/home/bigdata/hbase-1.2.4/lib/hadoop-yarn-common-2.5.1.jar:/home/bigdata/hbase-1.2.4/lib/hadoop-yarn-server-common-2.5.1.jar:/home/bigdata/hbase-1.2.4/lib/hbase-annotations-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/hbase-annotations-1.2.4-tests.jar:/home/bigdata/hbase-1.2.4/lib/hbase-client-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/hbase-common-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/hbase-common-1.2.4-tests.jar:/home/bigdata/hbase-1.2.4/lib/hbase-examples-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/hbase-external-blockcache-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/hbase-hadoop2-compat-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/hbase-hadoop-compat-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/hbase-it-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/hbase-it-1.2.4-tests.jar:/home/bigdata/hbase-1.2.4/lib/hbase-prefix-tree-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/hbase-procedure-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/hbase-protocol-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/hbase-resource-bundle-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/hbase-rest-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/hbase-server-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/hbase-server-1.2.4-tests.jar:/home/bigdata/hbase-1.2.4/lib/hbase-shell-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/hbase-thrift-1.2.4.jar:/home/bigdata/hbase-1.2.4/lib/htrace-core-3.1.0-incubating.jar:/home/bigdata/hbase-1.2.4/lib/httpclient-4.2.5.jar:/home/bigdata/hbase-1.2.4/lib/httpcore-4.4.1.jar:/home/bigdata/hbase-1.2.4/lib/jackson-core-asl-1.9.13.jar:/home/bigdata/hbase-1.2.4/lib/jackson-jaxrs-1.9.13.jar:/home/bigdata/hbase-1.2.4/lib/jackson-mapper-asl-1.9.13.jar:/home/bigdata/hbase-1.2.4/lib/jackson-xc-1.9.13.jar:/home/bigdata/hbase-1.2.4/lib/jamon-runtime-2.4.1.jar:/home/bigdata/hbase-1.2.4/lib/jasper-compiler-5.5.23.jar:/home/bigdata/hbase-1.2.4/lib/jasper-runtime-5.5.23.jar:/home/bigdata/hbase-1.2.4/lib/javax.inject-1.jar:/home/bigdata/hbase-1.2.4/lib/java-xmlbuilder-0.4.jar:/home/bigdata/hbase-1.2.4/lib/jaxb-api-2.2.2.jar:/home/bigdata/hbase-1.2.4/lib/jaxb-impl-2.2.3-1.jar:/home/bigdata/hbase-1.2.4/lib/jcodings-1.0.8.jar:/home/bigdata/hbase-1.2.4/lib/jersey-client-1.9.jar:/home/bigdata/hbase-1.2.4/lib/jersey-core-1.9.jar:/home/bigdata/hbase-1.2.4/lib/jersey-guice-1.9.jar:/home/bigdata/hbase-1.2.4/lib/jersey-json-1.9.jar:/home/bigdata/hbase-1.2.4/lib/jersey-server-1.9.jar:/home/bigdata/hbase-1.2.4/lib/jets3t-0.9.0.jar:/home/bigdata/hbase-1.2.4/lib/jettison-1.3.3.jar:/home/bigdata/hbase-1.2.4/lib/jetty-6.1.26.jar:/home/bigdata/hbase-1.2.4/lib/jetty-sslengine-6.1.26.jar:/home/bigdata/hbase-1.2.4/lib/jetty-util-6.1.26.jar:/home/bigdata/hbase-1.2.4/lib/joni-2.1.2.jar:/home/bigdata/hbase-1.2.4/lib/jruby-complete-1.6.8.jar:/home/bigdata/hbase-1.2.4/lib/jsch-0.1.42.jar:/home/bigdata/hbase-1.2.4/lib/jsp-2.1-6.1.14.jar:/home/bigdata/hbase-1.2.4/lib/jsp-api-2.1-6.1.14.jar:/home/bigdata/hbase-1.2.4/lib/junit-4.12.jar:/home/bigdata/hbase-1.2.4/lib/leveldbjni-all-1.8.jar:/home/bigdata/hbase-1.2.4/lib/libthrift-0.9.3.jar:/home/bigdata/hbase-1.2.4/lib/log4j-1.2.17.jar:/home/bigdata/hbase-1.2.4/lib/metrics-core-2.2.0.jar:/home/bigdata/hbase-1.2.4/lib/netty-all-4.0.23.Final.jar:/home/bigdata/hbase-1.2.4/lib/paranamer-2.3.jar:/home/bigdata/hbase-1.2.4/lib/protobuf-java-2.5.0.jar:/home/bigdata/hbase-1.2.4/lib/servlet-api-2.5-6.1.14.jar:/home/bigdata/hbase-1.2.4/lib/servlet-api-2.5.jar:/home/bigdata/hbase-1.2.4/lib/slf4j-api-1.7.7.jar:/home/bigdata/hbase-1.2.4/lib/slf4j-log4j12-1.7.5.jar:/home/bigdata/hbase-1.2.4/lib/snappy-java-1.0.4.1.jar:/home/bigdata/hbase-1.2.4/lib/spymemcached-2.11.6.jar:/home/bigdata/hbase-1.2.4/lib/xmlenc-0.52.jar:/home/bigdata/hbase-1.2.4/lib/xz-1.0.jar:/home/bigdata/hbase-1.2.4/lib/zookeeper-3.4.6.jar:/home/bigdata/hadoop-2.7.3/etc/hadoop:/home/bigdata/hadoop-2.7.3/share/hadoop/common/lib/*:/home/bigdata/hadoop-2.7.3/share/hadoop/common/*:/home/bigdata/hadoop-2.7.3/share/hadoop/hdfs:/home/bigdata/hadoop-2.7.3/share/hadoop/hdfs/lib/*:/home/bigdata/hadoop-2.7.3/share/hadoop/hdfs/*:/home/bigdata/hadoop-2.7.3/share/hadoop/yarn/lib/*:/home/bigdata/hadoop-2.7.3/share/hadoop/yarn/*:/home/bigdata/hadoop-2.7.3/share/hadoop/mapreduce/lib/*:/home/bigdata/hadoop-2.7.3/share/hadoop/mapreduce/*:/home/bigdata/hadoop-2.7.3/contrib/capacity-scheduler/*.jar:/home/bigdata/hbase-1.2.4/conf:/home/bigdata/apache-hive-2.1.0-bin/lib/*' -Djava.library.path=:/home/bigdata/hadoop-2.7.3/lib/native:/home/bigdata/hadoop-2.7.3/lib/native org.apache.flume.node.Application --conf-file conf/user_pay_agent.properties --name UserPayAgent
+SLF4J: Class path contains multiple SLF4J bindings.
+SLF4J: Found binding in [jar:file:/home/bigdata/apache-flume-1.7.0-bin/lib/slf4j-log4j12-1.6.1.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/home/bigdata/hadoop-2.7.3/share/hadoop/common/lib/slf4j-log4j12-1.7.10.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/home/bigdata/hbase-1.2.4/lib/slf4j-log4j12-1.7.5.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/home/bigdata/apache-hive-2.1.0-bin/lib/log4j-slf4j-impl-2.4.1.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+2018-03-26 06:42:58,289 (lifecycleSupervisor-1-0) [INFO - org.apache.flume.node.PollingPropertiesFileConfigurationProvider.start(PollingPropertiesFileConfigurationProvider.java:62)] Configuration provider starting
+2018-03-26 06:42:58,296 (lifecycleSupervisor-1-0) [DEBUG - org.apache.flume.node.PollingPropertiesFileConfigurationProvider.start(PollingPropertiesFileConfigurationProvider.java:79)] Configuration provider started
+2018-03-26 06:42:58,300 (conf-file-poller-0) [DEBUG - org.apache.flume.node.PollingPropertiesFileConfigurationProvider$FileWatcherRunnable.run(PollingPropertiesFileConfigurationProvider.java:127)] Checking file:conf/user_pay_agent.properties for changes
+2018-03-26 06:42:58,300 (conf-file-poller-0) [INFO - org.apache.flume.node.PollingPropertiesFileConfigurationProvider$FileWatcherRunnable.run(PollingPropertiesFileConfigurationProvider.java:134)] Reloading configuration file:conf/user_pay_agent.properties
+2018-03-26 06:42:58,307 (conf-file-poller-0) [INFO - org.apache.flume.conf.FlumeConfiguration$AgentConfiguration.addProperty(FlumeConfiguration.java:1016)] Processing:mysink
+2018-03-26 06:42:58,307 (conf-file-poller-0) [DEBUG - org.apache.flume.conf.FlumeConfiguration$AgentConfiguration.addProperty(FlumeConfiguration.java:1020)] Created context for mysink: hdfs.fileType
+2018-03-26 06:42:58,308 (conf-file-poller-0) [INFO - org.apache.flume.conf.FlumeConfiguration$AgentConfiguration.addProperty(FlumeConfiguration.java:1016)] Processing:mysink
+2018-03-26 06:42:58,309 (conf-file-poller-0) [INFO - org.apache.flume.conf.FlumeConfiguration$AgentConfiguration.addProperty(FlumeConfiguration.java:1016)] Processing:mysink
+2018-03-26 06:42:58,309 (conf-file-poller-0) [INFO - org.apache.flume.conf.FlumeConfiguration$AgentConfiguration.addProperty(FlumeConfiguration.java:1016)] Processing:mysink
+2018-03-26 06:42:58,309 (conf-file-poller-0) [INFO - org.apache.flume.conf.FlumeConfiguration$AgentConfiguration.addProperty(FlumeConfiguration.java:1016)] Processing:mysink
+2018-03-26 06:42:58,310 (conf-file-poller-0) [INFO - org.apache.flume.conf.FlumeConfiguration$AgentConfiguration.addProperty(FlumeConfiguration.java:930)] Added sinks: mysink Agent: UserPayAgent
+2018-03-26 06:42:58,310 (conf-file-poller-0) [INFO - org.apache.flume.conf.FlumeConfiguration$AgentConfiguration.addProperty(FlumeConfiguration.java:1016)] Processing:mysink
+2018-03-26 06:42:58,311 (conf-file-poller-0) [INFO - org.apache.flume.conf.FlumeConfiguration$AgentConfiguration.addProperty(FlumeConfiguration.java:1016)] Processing:mysink
+2018-03-26 06:42:58,311 (conf-file-poller-0) [INFO - org.apache.flume.conf.FlumeConfiguration$AgentConfiguration.addProperty(FlumeConfiguration.java:1016)] Processing:mysink
+2018-03-26 06:42:58,312 (conf-file-poller-0) [DEBUG - org.apache.flume.conf.FlumeConfiguration$AgentConfiguration.isValid(FlumeConfiguration.java:313)] Starting validation of configuration for agent: UserPayAgent
+2018-03-26 06:42:58,315 (conf-file-poller-0) [INFO - org.apache.flume.conf.LogPrivacyUtil.<clinit>(LogPrivacyUtil.java:51)] Logging of configuration details is disabled. To see configuration details in the log run the agent with -Dorg.apache.flume.log.printconfig=true JVM argument. Please note that this is not recommended in production systems as it may leak private information to the logfile.
+2018-03-26 06:42:58,342 (conf-file-poller-0) [DEBUG - org.apache.flume.conf.FlumeConfiguration$AgentConfiguration.validateChannels(FlumeConfiguration.java:467)] Created channel mychannel
+2018-03-26 06:42:58,356 (conf-file-poller-0) [DEBUG - org.apache.flume.conf.FlumeConfiguration$AgentConfiguration.validateSinks(FlumeConfiguration.java:674)] Creating sink: mysink using HDFS
+2018-03-26 06:42:58,361 (conf-file-poller-0) [DEBUG - org.apache.flume.conf.FlumeConfiguration.validateConfiguration(FlumeConfiguration.java:135)] Channels:mychannel
+
+2018-03-26 06:42:58,361 (conf-file-poller-0) [DEBUG - org.apache.flume.conf.FlumeConfiguration.validateConfiguration(FlumeConfiguration.java:136)] Sinks mysink
+
+2018-03-26 06:42:58,362 (conf-file-poller-0) [DEBUG - org.apache.flume.conf.FlumeConfiguration.validateConfiguration(FlumeConfiguration.java:137)] Sources mysource
+
+2018-03-26 06:42:58,362 (conf-file-poller-0) [INFO - org.apache.flume.conf.FlumeConfiguration.validateConfiguration(FlumeConfiguration.java:140)] Post-validation flume configuration contains configuration for agents: [UserPayAgent]
+2018-03-26 06:42:58,363 (conf-file-poller-0) [INFO - org.apache.flume.node.AbstractConfigurationProvider.loadChannels(AbstractConfigurationProvider.java:147)] Creating channels
+2018-03-26 06:42:58,375 (conf-file-poller-0) [INFO - org.apache.flume.channel.DefaultChannelFactory.create(DefaultChannelFactory.java:42)] Creating instance of channel mychannel type memory
+2018-03-26 06:42:58,382 (conf-file-poller-0) [INFO - org.apache.flume.node.AbstractConfigurationProvider.loadChannels(AbstractConfigurationProvider.java:201)] Created channel mychannel
+2018-03-26 06:42:58,384 (conf-file-poller-0) [INFO - org.apache.flume.source.DefaultSourceFactory.create(DefaultSourceFactory.java:41)] Creating instance of source mysource, type spooldir
+2018-03-26 06:42:58,400 (conf-file-poller-0) [INFO - org.apache.flume.sink.DefaultSinkFactory.create(DefaultSinkFactory.java:42)] Creating instance of sink: mysink, type: hdfs
+2018-03-26 06:42:58,415 (conf-file-poller-0) [INFO - org.apache.flume.node.AbstractConfigurationProvider.getConfiguration(AbstractConfigurationProvider.java:116)] Channel mychannel connected to [mysource, mysink]
+2018-03-26 06:42:58,429 (conf-file-poller-0) [INFO - org.apache.flume.node.Application.startAllComponents(Application.java:137)] Starting new configuration:{ sourceRunners:{mysource=EventDrivenSourceRunner: { source:Spool Directory source mysource: { spoolDir: /tmp/logs/user_pay } }} sinkRunners:{mysink=SinkRunner: { policy:org.apache.flume.sink.DefaultSinkProcessor@9b10b09 counterGroup:{ name:null counters:{} } }} channels:{mychannel=org.apache.flume.channel.MemoryChannel{name: mychannel}} }
+2018-03-26 06:42:58,447 (conf-file-poller-0) [INFO - org.apache.flume.node.Application.startAllComponents(Application.java:144)] Starting Channel mychannel
+2018-03-26 06:42:58,450 (lifecycleSupervisor-1-0) [INFO - org.apache.flume.instrumentation.MonitoredCounterGroup.register(MonitoredCounterGroup.java:119)] Monitored counter group for type: CHANNEL, name: mychannel: Successfully registered new MBean.
+2018-03-26 06:42:58,451 (lifecycleSupervisor-1-0) [INFO - org.apache.flume.instrumentation.MonitoredCounterGroup.start(MonitoredCounterGroup.java:95)] Component type: CHANNEL, name: mychannel started
+2018-03-26 06:42:58,451 (conf-file-poller-0) [INFO - org.apache.flume.node.Application.startAllComponents(Application.java:171)] Starting Sink mysink
+2018-03-26 06:42:58,452 (conf-file-poller-0) [INFO - org.apache.flume.node.Application.startAllComponents(Application.java:182)] Starting Source mysource
+2018-03-26 06:42:58,453 (lifecycleSupervisor-1-1) [INFO - org.apache.flume.source.SpoolDirectorySource.start(SpoolDirectorySource.java:83)] SpoolDirectorySource source starting with directory: /tmp/logs/user_pay
+2018-03-26 06:42:58,460 (lifecycleSupervisor-1-0) [INFO - org.apache.flume.instrumentation.MonitoredCounterGroup.register(MonitoredCounterGroup.java:119)] Monitored counter group for type: SINK, name: mysink: Successfully registered new MBean.
+2018-03-26 06:42:58,460 (lifecycleSupervisor-1-0) [INFO - org.apache.flume.instrumentation.MonitoredCounterGroup.start(MonitoredCounterGroup.java:95)] Component type: SINK, name: mysink started
+2018-03-26 06:42:58,470 (SinkRunner-PollingRunner-DefaultSinkProcessor) [DEBUG - org.apache.flume.SinkRunner$PollingRunner.run(SinkRunner.java:141)] Polling sink runner starting
+2018-03-26 06:42:58,471 (lifecycleSupervisor-1-1) [DEBUG - org.apache.flume.client.avro.ReliableSpoolingFileEventReader.<init>(ReliableSpoolingFileEventReader.java:150)] Initializing ReliableSpoolingFileEventReader with directory=/tmp/logs/user_pay, metaDir=.flumespool, deserializer=LINE
+2018-03-26 06:42:58,486 (lifecycleSupervisor-1-1) [DEBUG - org.apache.flume.client.avro.ReliableSpoolingFileEventReader.<init>(ReliableSpoolingFileEventReader.java:174)] Successfully created and deleted canary file: /tmp/logs/user_pay/flume-spooldir-perm-check-3710606135199229391.canary
+2018-03-26 06:42:58,490 (lifecycleSupervisor-1-1) [DEBUG - org.apache.flume.source.SpoolDirectorySource.start(SpoolDirectorySource.java:118)] SpoolDirectorySource source started
+2018-03-26 06:42:58,493 (lifecycleSupervisor-1-1) [INFO - org.apache.flume.instrumentation.MonitoredCounterGroup.register(MonitoredCounterGroup.java:119)] Monitored counter group for type: SOURCE, name: mysource: Successfully registered new MBean.
+2018-03-26 06:42:58,493 (lifecycleSupervisor-1-1) [INFO - org.apache.flume.instrumentation.MonitoredCounterGroup.start(MonitoredCounterGroup.java:95)] Component type: SOURCE, name: mysource started
+2018-03-26 06:42:58,984 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.hdfs.HDFSDataStream.configure(HDFSDataStream.java:57)] Serializer = TEXT, UseRawLocalFileSystem = false
+2018-03-26 06:42:59,582 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.hdfs.BucketWriter.open(BucketWriter.java:231)] Creating hdfs://bigdata:9000/data/graduation/user_pay/FlumeData.1522071778984.tmp
+2018-03-26 06:43:01,672 (hdfs-mysink-call-runner-0) [DEBUG - org.apache.flume.sink.hdfs.AbstractHDFSWriter.reflectGetNumCurrentReplicas(AbstractHDFSWriter.java:200)] Using getNumCurrentReplicas--HDFS-826
+2018-03-26 06:43:01,681 (hdfs-mysink-call-runner-0) [DEBUG - org.apache.flume.sink.hdfs.AbstractHDFSWriter.reflectGetDefaultReplication(AbstractHDFSWriter.java:228)] Using FileSystem.getDefaultReplication(Path) from HADOOP-8014
+2018-03-26 06:43:02,713 (pool-4-thread-1) [WARN - org.apache.flume.source.SpoolDirectorySource$SpoolDirectoryRunnable.run(SpoolDirectorySource.java:261)] The channel is full, and cannot write data now. The source will try again after 250 milliseconds
+2018-03-26 06:43:02,964 (pool-4-thread-1) [INFO - org.apache.flume.client.avro.ReliableSpoolingFileEventReader.readEvents(ReliableSpoolingFileEventReader.java:305)] Last read was never committed - resetting mark position.
+.........
+
+
+
+
+[bigdata@bigdata apache-flume-1.7.0-bin]$ hdfs dfs -cat /data/graduation/user_pay/FlumeData.1522068501766 |head
+22127870,1862,2015-12-25 17:00:00
+3434231,1862,2016-10-05 11:00:00
+16955285,1862,2016-02-10 15:00:00
+13799128,1862,2016-01-13 14:00:00
+13799128,1862,2016-07-05 12:00:00
+20244878,1862,2016-09-17 15:00:00
+20244878,1862,2016-05-29 16:00:00
+438444,1862,2016-02-22 17:00:00
+22003193,1862,2016-08-07 15:00:00
+20244878,1862,2016-04-17 16:00:00
+cat: Unable to write to output stream.
+
+[bigdata@bigdata ~]$ cd /tmp/logs/user_pay/
+[bigdata@bigdata user_pay]$
+[bigdata@bigdata user_pay]$
+
+[bigdata@bigdata user_pay]$ df -hl
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda2        18G   15G  1.8G  90% /
+tmpfs           5.8G  228K  5.8G   1% /dev/shm
+/dev/sda1       291M   39M  238M  14% /boot
+
+
+[bigdata@bigdata ~]$ hdfs dfs -du -h /data/graduation/user_pay/
+27.2 M  /data/graduation/user_pay/FlumeData.1522068501766
+21.9 M  /data/graduation/user_pay/FlumeData.1522068536031
+22.2 M  /data/graduation/user_pay/FlumeData.1522068566323
+20.7 M  /data/graduation/user_pay/FlumeData.1522068596623
+18.5 M  /data/graduation/user_pay/FlumeData.1522068626845
+6.3 M   /data/graduation/user_pay/FlumeData.1522068657166
+5.2 M   /data/graduation/user_pay/FlumeData.1522068687398
+9.6 M   /data/graduation/user_pay/FlumeData.1522068717743
+8.2 M   /data/graduation/user_pay/FlumeData.1522068748009
+2.8 M   /data/graduation/user_pay/FlumeData.1522071778984
+3.5 M   /data/graduation/user_pay/FlumeData.1522071811743
+5.2 M   /data/graduation/user_pay/FlumeData.1522071841893
+2.8 M   /data/graduation/user_pay/FlumeData.1522071872094
+4.1 M   /data/graduation/user_pay/FlumeData.1522071902340
+4.1 M   /data/graduation/user_pay/FlumeData.1522071932549
+4.8 M   /data/graduation/user_pay/FlumeData.1522071962716
+4.0 M   /data/graduation/user_pay/FlumeData.1522071992971
+3.2 M   /data/graduation/user_pay/FlumeData.1522072023175
+2.6 M   /data/graduation/user_pay/FlumeData.1522072053423
+2.7 M   /data/graduation/user_pay/FlumeData.1522072083548
+3.3 M   /data/graduation/user_pay/FlumeData.1522072113638
+3.2 M   /data/graduation/user_pay/FlumeData.1522072143897
+2.0 M   /data/graduation/user_pay/FlumeData.1522072174092
+2.5 M   /data/graduation/user_pay/FlumeData.1522072204250
+2.4 M   /data/graduation/user_pay/FlumeData.1522072234453
+4.3 M   /data/graduation/user_pay/FlumeData.1522072264718
+1.9 M   /data/graduation/user_pay/FlumeData.1522072295094
+3.7 M   /data/graduation/user_pay/FlumeData.1522072325475
+2.8 M   /data/graduation/user_pay/FlumeData.1522072356476
+2.2 M   /data/graduation/user_pay/FlumeData.1522072386806
+2.3 M   /data/graduation/user_pay/FlumeData.1522072417022
+2.2 M   /data/graduation/user_pay/FlumeData.1522072447251
+2.2 M   /data/graduation/user_pay/FlumeData.1522072477515
+2.7 M   /data/graduation/user_pay/FlumeData.1522072507698
+1.9 M   /data/graduation/user_pay/FlumeData.1522072537941
+2.5 M   /data/graduation/user_pay/FlumeData.1522072568193
+2.9 M   /data/graduation/user_pay/FlumeData.1522072598381
+2.1 M   /data/graduation/user_pay/FlumeData.1522072628614
+2.7 M   /data/graduation/user_pay/FlumeData.1522072658980
+3.1 M   /data/graduation/user_pay/FlumeData.1522072689219
+2.9 M   /data/graduation/user_pay/FlumeData.1522072719587
+2.0 M   /data/graduation/user_pay/FlumeData.1522072749823
+2.4 M   /data/graduation/user_pay/FlumeData.1522072779971
+2.4 M   /data/graduation/user_pay/FlumeData.1522072810305
+2.4 M   /data/graduation/user_pay/FlumeData.1522072840483
+2.3 M   /data/graduation/user_pay/FlumeData.1522072870615
+2.5 M   /data/graduation/user_pay/FlumeData.1522072901356
+2.5 M   /data/graduation/user_pay/FlumeData.1522072931542
+3.5 M   /data/graduation/user_pay/FlumeData.1522072961656
+2.3 M   /data/graduation/user_pay/FlumeData.1522072991762
+1.9 M   /data/graduation/user_pay/FlumeData.1522073021891
+2.5 M   /data/graduation/user_pay/FlumeData.1522073052065
+1.8 M   /data/graduation/user_pay/FlumeData.1522073082339
+3.2 M   /data/graduation/user_pay/FlumeData.1522073112680
+2.6 M   /data/graduation/user_pay/FlumeData.1522073142805
+2.1 M   /data/graduation/user_pay/FlumeData.1522073172955
+2.5 M   /data/graduation/user_pay/FlumeData.1522073203111
+2.3 M   /data/graduation/user_pay/FlumeData.1522073233318
+2.1 M   /data/graduation/user_pay/FlumeData.1522073263454
+1.8 M   /data/graduation/user_pay/FlumeData.1522073293616
+2.6 M   /data/graduation/user_pay/FlumeData.1522073323739
+1.9 M   /data/graduation/user_pay/FlumeData.1522073353934
+2.2 M   /data/graduation/user_pay/FlumeData.1522073384090
+3.9 M   /data/graduation/user_pay/FlumeData.1522073414342
+3.5 M   /data/graduation/user_pay/FlumeData.1522073444776
+2.8 M   /data/graduation/user_pay/FlumeData.1522073475051
+2.1 M   /data/graduation/user_pay/FlumeData.1522073505357
+1.9 M   /data/graduation/user_pay/FlumeData.1522073535593
+2.7 M   /data/graduation/user_pay/FlumeData.1522073566055
+1.8 M   /data/graduation/user_pay/FlumeData.1522073596543
+2.4 M   /data/graduation/user_pay/FlumeData.1522073626708
+2.1 M   /data/graduation/user_pay/FlumeData.1522073656854
+2.4 M   /data/graduation/user_pay/FlumeData.1522073686988
+2.4 M   /data/graduation/user_pay/FlumeData.1522073717129
+1.9 M   /data/graduation/user_pay/FlumeData.1522073747362
+2.2 M   /data/graduation/user_pay/FlumeData.1522073777538
+1.7 M   /data/graduation/user_pay/FlumeData.1522073807644
+2.3 M   /data/graduation/user_pay/FlumeData.1522073837795
+2.0 M   /data/graduation/user_pay/FlumeData.1522073867933
+4.6 M   /data/graduation/user_pay/FlumeData.1522073898079
+2.8 M   /data/graduation/user_pay/FlumeData.1522073928269
+3.9 M   /data/graduation/user_pay/FlumeData.1522073958527
+3.6 M   /data/graduation/user_pay/FlumeData.1522073988622
+3.1 M   /data/graduation/user_pay/FlumeData.1522074018790
+2.0 M   /data/graduation/user_pay/FlumeData.1522074048956
+2.9 M   /data/graduation/user_pay/FlumeData.1522074079121
+2.3 M   /data/graduation/user_pay/FlumeData.1522074109313
+3.2 M   /data/graduation/user_pay/FlumeData.1522074139894
+5.0 M   /data/graduation/user_pay/FlumeData.1522074170046
+3.9 M   /data/graduation/user_pay/FlumeData.1522074200148
+2.8 M   /data/graduation/user_pay/FlumeData.1522074230348
+4.0 M   /data/graduation/user_pay/FlumeData.1522074260471
+4.0 M   /data/graduation/user_pay/FlumeData.1522074290676
+9.7 M   /data/graduation/user_pay/FlumeData.1522074321300
+3.6 M   /data/graduation/user_pay/FlumeData.1522074351409
+2.7 M   /data/graduation/user_pay/FlumeData.1522074381491
+3.8 M   /data/graduation/user_pay/FlumeData.1522074411627
+5.9 M   /data/graduation/user_pay/FlumeData.1522074441783
+8.8 M   /data/graduation/user_pay/FlumeData.1522074471908
+8.8 M   /data/graduation/user_pay/FlumeData.1522074501961
+8.7 M   /data/graduation/user_pay/FlumeData.1522074532045
+9.4 M   /data/graduation/user_pay/FlumeData.1522074562119
+10.5 M  /data/graduation/user_pay/FlumeData.1522074592193
+10.7 M  /data/graduation/user_pay/FlumeData.1522074622261
+10.6 M  /data/graduation/user_pay/FlumeData.1522074652299
+10.6 M  /data/graduation/user_pay/FlumeData.1522074682337
+9.8 M   /data/graduation/user_pay/FlumeData.1522074712374
+9.0 M   /data/graduation/user_pay/FlumeData.1522074742417
+9.0 M   /data/graduation/user_pay/FlumeData.1522074772502
+9.8 M   /data/graduation/user_pay/FlumeData.1522074802632
+9.0 M   /data/graduation/user_pay/FlumeData.1522074832705
+9.3 M   /data/graduation/user_pay/FlumeData.1522074862763
+10.1 M  /data/graduation/user_pay/FlumeData.1522074892841
+9.0 M   /data/graduation/user_pay/FlumeData.1522074922966
+9.1 M   /data/graduation/user_pay/FlumeData.1522074953113
+8.9 M   /data/graduation/user_pay/FlumeData.1522074983168
+9.0 M   /data/graduation/user_pay/FlumeData.1522075013223
+10.3 M  /data/graduation/user_pay/FlumeData.1522075043269
+9.5 M   /data/graduation/user_pay/FlumeData.1522075073340
+8.9 M   /data/graduation/user_pay/FlumeData.1522075103400
+8.8 M   /data/graduation/user_pay/FlumeData.1522075133462
+8.9 M   /data/graduation/user_pay/FlumeData.1522075163497
+10.0 M  /data/graduation/user_pay/FlumeData.1522075193537
+8.8 M   /data/graduation/user_pay/FlumeData.1522075223592
+9.3 M   /data/graduation/user_pay/FlumeData.1522075253639
+9.3 M   /data/graduation/user_pay/FlumeData.1522075283729
+8.8 M   /data/graduation/user_pay/FlumeData.1522075313769
+9.1 M   /data/graduation/user_pay/FlumeData.1522075343822
+9.6 M   /data/graduation/user_pay/FlumeData.1522075373898
+9.3 M   /data/graduation/user_pay/FlumeData.1522075403938
+9.4 M   /data/graduation/user_pay/FlumeData.1522075433977
+8.9 M   /data/graduation/user_pay/FlumeData.1522075464030
+8.8 M   /data/graduation/user_pay/FlumeData.1522075494118
+9.0 M   /data/graduation/user_pay/FlumeData.1522075524157
+10.4 M  /data/graduation/user_pay/FlumeData.1522075554228
+8.9 M   /data/graduation/user_pay/FlumeData.1522075584270
+7.1 M   /data/graduation/user_pay/FlumeData.1522075614312
+7.1 M   /data/graduation/user_pay/FlumeData.1522075644392
+7.0 M   /data/graduation/user_pay/FlumeData.1522075674436
+7.7 M   /data/graduation/user_pay/FlumeData.1522075704612
+8.5 M   /data/graduation/user_pay/FlumeData.1522075734712
+7.2 M   /data/graduation/user_pay/FlumeData.1522075764899
+8.3 M   /data/graduation/user_pay/FlumeData.1522075794960
+7.0 M   /data/graduation/user_pay/FlumeData.1522075825056
+6.8 M   /data/graduation/user_pay/FlumeData.1522075855140
+7.1 M   /data/graduation/user_pay/FlumeData.1522075885274
+7.1 M   /data/graduation/user_pay/FlumeData.1522075915324
+6.8 M   /data/graduation/user_pay/FlumeData.1522075945367
+6.7 M   /data/graduation/user_pay/FlumeData.1522075975466
+7.1 M   /data/graduation/user_pay/FlumeData.1522076005577
+8.8 M   /data/graduation/user_pay/FlumeData.1522076035704
+11.2 M  /data/graduation/user_pay/FlumeData.1522076065760
+9.6 M   /data/graduation/user_pay/FlumeData.1522076095799
+8.9 M   /data/graduation/user_pay/FlumeData.1522076125835
+8.6 M   /data/graduation/user_pay/FlumeData.1522076155968
+8.9 M   /data/graduation/user_pay/FlumeData.1522076186046
+10.4 M  /data/graduation/user_pay/FlumeData.1522076216169
+8.9 M   /data/graduation/user_pay/FlumeData.1522076246255
+9.9 M   /data/graduation/user_pay/FlumeData.1522076276296
+10.0 M  /data/graduation/user_pay/FlumeData.1522076306366
+8.8 M   /data/graduation/user_pay/FlumeData.1522076336403
+8.5 M   /data/graduation/user_pay/FlumeData.1522076366446
+9.0 M   /data/graduation/user_pay/FlumeData.1522076396551
+10.2 M  /data/graduation/user_pay/FlumeData.1522076426590
+9.2 M   /data/graduation/user_pay/FlumeData.1522076456697
+10.0 M  /data/graduation/user_pay/FlumeData.1522076486788
+9.0 M   /data/graduation/user_pay/FlumeData.1522076516867
+8.8 M   /data/graduation/user_pay/FlumeData.1522076546924
+8.9 M   /data/graduation/user_pay/FlumeData.1522076577007
+8.7 M   /data/graduation/user_pay/FlumeData.1522076607099
+8.6 M   /data/graduation/user_pay/FlumeData.1522076637165
+9.0 M   /data/graduation/user_pay/FlumeData.1522076667211
+9.1 M   /data/graduation/user_pay/FlumeData.1522076697250
+8.8 M   /data/graduation/user_pay/FlumeData.1522076727288
+8.9 M   /data/graduation/user_pay/FlumeData.1522076757383
+9.1 M   /data/graduation/user_pay/FlumeData.1522076787476
+9.1 M   /data/graduation/user_pay/FlumeData.1522076817748
+9.0 M   /data/graduation/user_pay/FlumeData.1522076847803
+8.9 M   /data/graduation/user_pay/FlumeData.1522076877839
+9.1 M   /data/graduation/user_pay/FlumeData.1522076907908
+8.6 M   /data/graduation/user_pay/FlumeData.1522076937973
+9.0 M   /data/graduation/user_pay/FlumeData.1522076968048
+8.8 M   /data/graduation/user_pay/FlumeData.1522076998179
+10.2 M  /data/graduation/user_pay/FlumeData.1522077028217
+9.1 M   /data/graduation/user_pay/FlumeData.1522077058255
+8.9 M   /data/graduation/user_pay/FlumeData.1522077088324
+8.8 M   /data/graduation/user_pay/FlumeData.1522077118394
+9.0 M   /data/graduation/user_pay/FlumeData.1522077148468
+8.9 M   /data/graduation/user_pay/FlumeData.1522077178507
+8.9 M   /data/graduation/user_pay/FlumeData.1522077208548
+9.1 M   /data/graduation/user_pay/FlumeData.1522077238590
+8.8 M   /data/graduation/user_pay/FlumeData.1522077268630
+9.0 M   /data/graduation/user_pay/FlumeData.1522077298688
+8.8 M   /data/graduation/user_pay/FlumeData.1522077329167
+8.9 M   /data/graduation/user_pay/FlumeData.1522077359240
+9.1 M   /data/graduation/user_pay/FlumeData.1522077389287
+8.7 M   /data/graduation/user_pay/FlumeData.1522077419326
+8.9 M   /data/graduation/user_pay/FlumeData.1522077449385
+8.9 M   /data/graduation/user_pay/FlumeData.1522077479466
+9.0 M   /data/graduation/user_pay/FlumeData.1522077509502
+8.7 M   /data/graduation/user_pay/FlumeData.1522077539577
+8.9 M   /data/graduation/user_pay/FlumeData.1522077569630
+8.7 M   /data/graduation/user_pay/FlumeData.1522077599685
+8.9 M   /data/graduation/user_pay/FlumeData.1522077629720
+8.9 M   /data/graduation/user_pay/FlumeData.1522077659839
+10.0 M  /data/graduation/user_pay/FlumeData.1522077689920
+10.8 M  /data/graduation/user_pay/FlumeData.1522077719989
+10.9 M  /data/graduation/user_pay/FlumeData.1522077750064
+9.4 M   /data/graduation/user_pay/FlumeData.1522077780151
+10.4 M  /data/graduation/user_pay/FlumeData.1522077810206
+9.5 M   /data/graduation/user_pay/FlumeData.1522077840259
+8.7 M   /data/graduation/user_pay/FlumeData.1522077870305
+8.9 M   /data/graduation/user_pay/FlumeData.1522077900412
+8.7 M   /data/graduation/user_pay/FlumeData.1522077930500
+8.9 M   /data/graduation/user_pay/FlumeData.1522077960559
+8.9 M   /data/graduation/user_pay/FlumeData.1522077990601
+8.8 M   /data/graduation/user_pay/FlumeData.1522078020669
+8.8 M   /data/graduation/user_pay/FlumeData.1522078050702
+8.9 M   /data/graduation/user_pay/FlumeData.1522078080758
+8.8 M   /data/graduation/user_pay/FlumeData.1522078110799
+8.9 M   /data/graduation/user_pay/FlumeData.1522078140837
+9.1 M   /data/graduation/user_pay/FlumeData.1522078170891
+9.2 M   /data/graduation/user_pay/FlumeData.1522078200944
+9.0 M   /data/graduation/user_pay/FlumeData.1522078230994
+8.9 M   /data/graduation/user_pay/FlumeData.1522078261141
+8.9 M   /data/graduation/user_pay/FlumeData.1522078291310
+8.8 M   /data/graduation/user_pay/FlumeData.1522078321401
+8.7 M   /data/graduation/user_pay/FlumeData.1522078351506
+8.8 M   /data/graduation/user_pay/FlumeData.1522078381595
+8.7 M   /data/graduation/user_pay/FlumeData.1522078411630
+8.9 M   /data/graduation/user_pay/FlumeData.1522078441692
+8.4 M   /data/graduation/user_pay/FlumeData.1522078471743
+8.9 M   /data/graduation/user_pay/FlumeData.1522078501778
+8.9 M   /data/graduation/user_pay/FlumeData.1522078531831
+10.4 M  /data/graduation/user_pay/FlumeData.1522078561905
+8.7 M   /data/graduation/user_pay/FlumeData.1522078591945
+8.7 M   /data/graduation/user_pay/FlumeData.1522078622075
+9.1 M   /data/graduation/user_pay/FlumeData.1522078652185
+8.8 M   /data/graduation/user_pay/FlumeData.1522078682254
+8.9 M   /data/graduation/user_pay/FlumeData.1522078712385
+8.6 M   /data/graduation/user_pay/FlumeData.1522078742429
+8.9 M   /data/graduation/user_pay/FlumeData.1522078772504
+8.8 M   /data/graduation/user_pay/FlumeData.1522078802640
+8.7 M   /data/graduation/user_pay/FlumeData.1522078832679
+8.9 M   /data/graduation/user_pay/FlumeData.1522078862734
+8.8 M   /data/graduation/user_pay/FlumeData.1522078892788
+9.3 M   /data/graduation/user_pay/FlumeData.1522078922867
+8.9 M   /data/graduation/user_pay/FlumeData.1522078952933
+8.7 M   /data/graduation/user_pay/FlumeData.1522078983035
+8.7 M   /data/graduation/user_pay/FlumeData.1522079013089
+8.7 M   /data/graduation/user_pay/FlumeData.1522079043133
+9.1 M   /data/graduation/user_pay/FlumeData.1522079073170
+8.8 M   /data/graduation/user_pay/FlumeData.1522079103263
+9.0 M   /data/graduation/user_pay/FlumeData.1522079133419
+8.8 M   /data/graduation/user_pay/FlumeData.1522079163489
+8.9 M   /data/graduation/user_pay/FlumeData.1522079193553
+8.9 M   /data/graduation/user_pay/FlumeData.1522079223590
+8.7 M   /data/graduation/user_pay/FlumeData.1522079253649
+9.0 M   /data/graduation/user_pay/FlumeData.1522079283730
+8.8 M   /data/graduation/user_pay/FlumeData.1522079313774
+8.8 M   /data/graduation/user_pay/FlumeData.1522079343830
+8.7 M   /data/graduation/user_pay/FlumeData.1522079373904
+9.0 M   /data/graduation/user_pay/FlumeData.1522079403990
+8.9 M   /data/graduation/user_pay/FlumeData.1522079434033
+9.0 M   /data/graduation/user_pay/FlumeData.1522079464091
+8.7 M   /data/graduation/user_pay/FlumeData.1522079494262
+8.5 M   /data/graduation/user_pay/FlumeData.1522079524326
+8.8 M   /data/graduation/user_pay/FlumeData.1522079554404
+8.7 M   /data/graduation/user_pay/FlumeData.1522079584475
+9.0 M   /data/graduation/user_pay/FlumeData.1522079614510
+8.7 M   /data/graduation/user_pay/FlumeData.1522079644548
+8.8 M   /data/graduation/user_pay/FlumeData.1522079674602
+8.7 M   /data/graduation/user_pay/FlumeData.1522079704646
+8.9 M   /data/graduation/user_pay/FlumeData.1522079734684
+8.9 M   /data/graduation/user_pay/FlumeData.1522079764757
+9.0 M   /data/graduation/user_pay/FlumeData.1522079794791
+9.1 M   /data/graduation/user_pay/FlumeData.1522079824849
+8.9 M   /data/graduation/user_pay/FlumeData.1522079854897
+8.8 M   /data/graduation/user_pay/FlumeData.1522079884949
+8.8 M   /data/graduation/user_pay/FlumeData.1522079915005
+8.9 M   /data/graduation/user_pay/FlumeData.1522079945080
+8.9 M   /data/graduation/user_pay/FlumeData.1522079975144
+8.8 M   /data/graduation/user_pay/FlumeData.1522080005181
+8.8 M   /data/graduation/user_pay/FlumeData.1522080035223
+9.1 M   /data/graduation/user_pay/FlumeData.1522080065297
+8.7 M   /data/graduation/user_pay/FlumeData.1522080095385
+8.9 M   /data/graduation/user_pay/FlumeData.1522080125422
+8.7 M   /data/graduation/user_pay/FlumeData.1522080155529
+8.7 M   /data/graduation/user_pay/FlumeData.1522080185740
+8.8 M   /data/graduation/user_pay/FlumeData.1522080215805
+8.9 M   /data/graduation/user_pay/FlumeData.1522080245871
+9.0 M   /data/graduation/user_pay/FlumeData.1522080275921
+8.8 M   /data/graduation/user_pay/FlumeData.1522080306132
+8.9 M   /data/graduation/user_pay/FlumeData.1522080336233
+8.9 M   /data/graduation/user_pay/FlumeData.1522080366287
+8.7 M   /data/graduation/user_pay/FlumeData.1522080396394
+8.6 M   /data/graduation/user_pay/FlumeData.1522080426500
+7.9 M   /data/graduation/user_pay/FlumeData.1522080456557
+[bigdata@bigdata ~]$ hdfs dfs -du -h /data/graduation/user_pay/ |wc -l
+298
+[bigdata@bigdata ~]$
+
+
+[bigdata@bigdata user_pay]$ ls /tmp/logs/user_pay/
+user_pay.txt.COMPLETED
+[bigdata@bigdata user_pay]$
+[bigdata@bigdata user_pay]$
+[bigdata@bigdata user_pay]$ rm /tmp/logs/user_pay/*
+[bigdata@bigdata user_pay]$
+
+[bigdata@bigdata user_pay]$ df -hl
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda2        18G   13G  4.0G  77% /
+tmpfs           5.8G  228K  5.8G   1% /dev/shm
+/dev/sda1       291M   39M  238M  14% /boot
+[bigdata@bigdata user_pay]$
+

@@ -1,0 +1,694 @@
+
+（2）任务2:--第一种方式：利用Sqoop1 将MySQL 中shop_info 表导入到HDFS 中
+前提：启动mysql、yarn
+
+1、删除hdfs中的shop_info目录：
+hdfs dfs -rm -R /data/graduation/shop_info
+
+2、sqoop的command下编辑shop_info.sh 
+
+#!/bin/bash
+
+ sqoop import  -Dmapreduce.job.queuename=etl --connect jdbc:mysql://bigdata:3306/graduation --username root --password root --t
+able shop_info --driver com.mysql.jdbc.Driver --m 10 --target-dir /data/graduation/shop_info
+
+3、执行shop_info.sh 
+/home/bigdata/sqoop-1.4.6.bin__hadoop-2.0.4-alpha/command/shop_info.sh 
+
+4、查看是否文件被读取导入了HDFS
+hdfs dfs -du -h /data/graduation/shop_info/ 
+
+
+*******************************************************************************************
+[bigdata@bigdata command]$ hdfs dfs -rm -R /data/graduation/shop_info
+18/03/25 09:01:11 INFO fs.TrashPolicyDefault: Namenode trash configuration: Deletion interval = 0 minutes, Emptier interval = 0 minutes.
+Deleted /data/graduation/shop_info
+[bigdata@bigdata command]$ 
+
+
+
+[bigdata@bigdata command]$ vi shop_info.sh 
+[bigdata@bigdata command]$ pwd
+/home/bigdata/sqoop-1.4.6.bin__hadoop-2.0.4-alpha/command
+[bigdata@bigdata command]$ more shop_info.sh 
+#!/bin/bash
+
+ sqoop import  -Dmapreduce.job.queuename=etl --connect jdbc:mysql://bigdata:3306/graduation --username root --password root --t
+able shop_info --driver com.mysql.jdbc.Driver --m 10 --target-dir /data/graduation/shop_info
+[bigdata@bigdata command]$ 
+[bigdata@bigdata command]$ 
+
+
+
+
+[bigdata@bigdata command]$ 
+[bigdata@bigdata command]$ /home/bigdata/hadoop-2.7.3/command/start-yarn.sh
+starting yarn daemons
+starting resourcemanager, logging to /home/bigdata/hadoop-2.7.3/logs/yarn-bigdata-resourcemanager-bigdata.out
+bigdata: starting nodemanager, logging to /home/bigdata/hadoop-2.7.3/logs/yarn-bigdata-nodemanager-bigdata.out
+[bigdata@bigdata command]$ 
+[bigdata@bigdata command]$ 
+[bigdata@bigdata command]$ /home/bigdata/apache-hive-2.1.0-bin/command/start-metastore.sh
+[bigdata@bigdata command]$ 
+[bigdata@bigdata command]$ /home/bigdata/apache-hive-2.1.0-bin/command/start-hiveserver2.sh
+[bigdata@bigdata command]$ 
+[bigdata@bigdata command]$ 
+[bigdata@bigdata command]$ /home/bigdata/sqoop-1.4.6.bin__hadoop-2.0.4-alpha/command/shop_info.sh 
+Warning: /home/bigdata/sqoop-1.4.6.bin__hadoop-2.0.4-alpha/../hcatalog does not exist! HCatalog jobs will fail.
+Please set $HCAT_HOME to the root of your HCatalog installation.
+Warning: /home/bigdata/sqoop-1.4.6.bin__hadoop-2.0.4-alpha/../accumulo does not exist! Accumulo imports will fail.
+Please set $ACCUMULO_HOME to the root of your Accumulo installation.
+Warning: /home/bigdata/sqoop-1.4.6.bin__hadoop-2.0.4-alpha/../zookeeper does not exist! Accumulo imports will fail.
+Please set $ZOOKEEPER_HOME to the root of your Zookeeper installation.
+18/03/25 09:21:16 INFO sqoop.Sqoop: Running Sqoop version: 1.4.6
+18/03/25 09:21:16 WARN tool.BaseSqoopTool: Setting your password on the command-line is insecure. Consider using -P instead.
+18/03/25 09:21:16 WARN sqoop.ConnFactory: Parameter --driver is set to an explicit driver however appropriate connection manager is not being set (via --connection-manager). Sqoop is going to fall back to org.apache.sqoop.manager.GenericJdbcManager. Please specify explicitly which connection manager should be used next time.
+18/03/25 09:21:16 INFO manager.SqlManager: Using default fetchSize of 1000
+18/03/25 09:21:16 INFO tool.CodeGenTool: Beginning code generation
+18/03/25 09:21:16 INFO manager.SqlManager: Executing SQL statement: SELECT t.* FROM shop_info AS t WHERE 1=0
+18/03/25 09:21:16 INFO manager.SqlManager: Executing SQL statement: SELECT t.* FROM shop_info AS t WHERE 1=0
+18/03/25 09:21:16 INFO orm.CompilationManager: HADOOP_MAPRED_HOME is /home/bigdata/hadoop-2.7.3
+Note: /tmp/sqoop-bigdata/compile/279bd0aa15abc60733e9dd671c17bca0/shop_info.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+18/03/25 09:21:20 INFO orm.CompilationManager: Writing jar file: /tmp/sqoop-bigdata/compile/279bd0aa15abc60733e9dd671c17bca0/shop_info.jar
+18/03/25 09:21:20 INFO mapreduce.ImportJobBase: Beginning import of shop_info
+SLF4J: Class path contains multiple SLF4J bindings.
+SLF4J: Found binding in [jar:file:/home/bigdata/hadoop-2.7.3/share/hadoop/common/lib/slf4j-log4j12-1.7.10.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/home/bigdata/hbase-1.2.4/lib/slf4j-log4j12-1.7.5.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+SLF4J: Actual binding is of type [org.slf4j.impl.Log4jLoggerFactory]
+18/03/25 09:21:20 INFO Configuration.deprecation: mapred.jar is deprecated. Instead, use mapreduce.job.jar
+18/03/25 09:21:20 INFO manager.SqlManager: Executing SQL statement: SELECT t.* FROM shop_info AS t WHERE 1=0
+18/03/25 09:21:21 INFO Configuration.deprecation: mapred.map.tasks is deprecated. Instead, use mapreduce.job.maps
+18/03/25 09:21:21 INFO client.RMProxy: Connecting to ResourceManager at bigdata/127.0.0.1:18040
+18/03/25 09:21:24 INFO db.DBInputFormat: Using read commited transaction isolation
+18/03/25 09:21:24 INFO db.DataDrivenDBInputFormat: BoundingValsQuery: SELECT MIN(shop_id), MAX(shop_id) FROM shop_info
+18/03/25 09:21:24 WARN db.TextSplitter: Generating splits for a textual index column.
+18/03/25 09:21:24 WARN db.TextSplitter: If your database sorts in a case-insensitive order, this may result in a partial import or duplicate records.
+18/03/25 09:21:24 WARN db.TextSplitter: You are strongly encouraged to choose an integral split column.
+18/03/25 09:21:24 INFO mapreduce.JobSubmitter: number of splits:10
+18/03/25 09:21:24 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1521994807870_0001
+18/03/25 09:21:25 INFO impl.YarnClientImpl: Submitted application application_1521994807870_0001
+18/03/25 09:21:25 INFO mapreduce.Job: The url to track the job: http://localhost:18088/proxy/application_1521994807870_0001/
+18/03/25 09:21:25 INFO mapreduce.Job: Running job: job_1521994807870_0001
+18/03/25 09:21:41 INFO mapreduce.Job: Job job_1521994807870_0001 running in uber mode : false
+18/03/25 09:21:41 INFO mapreduce.Job:  map 0% reduce 0%
+
+18/03/25 09:21:55 INFO mapreduce.Job:  map 20% reduce 0%
+18/03/25 09:21:56 INFO mapreduce.Job:  map 30% reduce 0%
+18/03/25 09:22:00 INFO mapreduce.Job:  map 50% reduce 0%
+18/03/25 09:22:01 INFO mapreduce.Job:  map 60% reduce 0%
+18/03/25 09:22:05 INFO mapreduce.Job:  map 90% reduce 0%
+18/03/25 09:22:08 INFO mapreduce.Job:  map 100% reduce 0%
+18/03/25 09:22:08 INFO mapreduce.Job: Job job_1521994807870_0001 completed successfully
+18/03/25 09:22:08 INFO mapreduce.Job: Counters: 30
+	File System Counters
+		FILE: Number of bytes read=0
+		FILE: Number of bytes written=1377580
+		FILE: Number of read operations=0
+		FILE: Number of large read operations=0
+		FILE: Number of write operations=0
+		HDFS: Number of bytes read=1417
+		HDFS: Number of bytes written=169282
+		HDFS: Number of read operations=40
+		HDFS: Number of large read operations=0
+		HDFS: Number of write operations=20
+	Job Counters 
+		Launched map tasks=10
+		Other local map tasks=10
+		Total time spent by all maps in occupied slots (ms)=63029
+		Total time spent by all reduces in occupied slots (ms)=0
+		Total time spent by all map tasks (ms)=63029
+		Total vcore-milliseconds taken by all map tasks=63029
+		Total megabyte-milliseconds taken by all map tasks=64541696
+	Map-Reduce Framework
+		Map input records=2000
+		Map output records=2000
+		Input split bytes=1417
+		Spilled Records=0
+		Failed Shuffles=0
+		Merged Map outputs=0
+		GC time elapsed (ms)=3544
+		CPU time spent (ms)=10650
+		Physical memory (bytes) snapshot=1716252672
+		Virtual memory (bytes) snapshot=20996235264
+		Total committed heap usage (bytes)=1420820480
+	File Input Format Counters 
+		Bytes Read=0
+	File Output Format Counters 
+		Bytes Written=169282
+18/03/25 09:22:08 INFO mapreduce.ImportJobBase: Transferred 165.3145 KB in 47.0533 seconds (3.5133 KB/sec)
+18/03/25 09:22:08 INFO mapreduce.ImportJobBase: Retrieved 2000 records.
+[bigdata@bigdata command]$ 
+[bigdata@bigdata command]$ 
+
+[bigdata@bigdata conf]$ hdfs dfs -du -h /data/graduation/shop_info/ 
+0       /data/graduation/shop_info/_SUCCESS
+56.2 K  /data/graduation/shop_info/part-m-00000
+5.6 K   /data/graduation/shop_info/part-m-00001
+5.5 K   /data/graduation/shop_info/part-m-00002
+5.5 K   /data/graduation/shop_info/part-m-00003
+0       /data/graduation/shop_info/part-m-00004
+5.5 K   /data/graduation/shop_info/part-m-00005
+5.4 K   /data/graduation/shop_info/part-m-00006
+5.5 K   /data/graduation/shop_info/part-m-00007
+5.5 K   /data/graduation/shop_info/part-m-00008
+5.5 K   /data/graduation/shop_info/part-m-00009
+[bigdata@bigdata conf]$ 
+
+
+
+[bigdata@bigdata conf]$ hdfs dfs -cat /data/graduation/shop_info/part-m-00000 |head
+1,湖州,885,8,4,12,2,美食,休闲茶饮,饮品/甜点
+10,孝感,98,10,0,0,0,超市便利店,超市,
+100,南京,215,8,3,13,2,美食,快餐,西式快餐
+1000,广州,552,20,1,4,2,美食,中餐,川菜
+1001,合肥,838,20,0,1,0,美食,中餐,江浙菜
+1002,北京,113,10,3,1,0,美食,休闲茶饮,冰激凌
+1003,杭州,264,18,2,0,0,美食,中餐,其它地方菜
+1004,广州,590,3,2,1,0,美食,休闲食品,其它休闲食品
+1005,杭州,485,1,4,0,0,美食,小吃,面点
+1006,襄阳,875,18,4,0,1,超市便利店,超市,
+cat: Unable to write to output stream.
+[bigdata@bigdata conf]$ 
+
+
+
+[bigdata@bigdata conf]$ hdfs dfs -ls /data/graduation/user_pay/
+Found 43 items
+-rw-r--r--   1 bigdata supergroup   24797574 2018-03-25 08:37 /data/graduation/user_pay/FlumeData.1521992201609
+-rw-r--r--   1 bigdata supergroup   28437285 2018-03-25 08:37 /data/graduation/user_pay/FlumeData.1521992232856
+-rw-r--r--   1 bigdata supergroup   24651649 2018-03-25 08:38 /data/graduation/user_pay/FlumeData.1521992262923
+-rw-r--r--   1 bigdata supergroup   24714499 2018-03-25 08:38 /data/graduation/user_pay/FlumeData.1521992293020
+-rw-r--r--   1 bigdata supergroup   23127244 2018-03-25 08:39 /data/graduation/user_pay/FlumeData.1521992323070
+-rw-r--r--   1 bigdata supergroup   24603047 2018-03-25 08:39 /data/graduation/user_pay/FlumeData.1521992353148
+-rw-r--r--   1 bigdata supergroup   23733071 2018-03-25 08:40 /data/graduation/user_pay/FlumeData.1521992383207
+-rw-r--r--   1 bigdata supergroup   22989369 2018-03-25 08:40 /data/graduation/user_pay/FlumeData.1521992413294
+-rw-r--r--   1 bigdata supergroup   23560578 2018-03-25 08:41 /data/graduation/user_pay/FlumeData.1521992443341
+-rw-r--r--   1 bigdata supergroup   25056227 2018-03-25 08:41 /data/graduation/user_pay/FlumeData.1521992473385
+-rw-r--r--   1 bigdata supergroup   26010071 2018-03-25 08:42 /data/graduation/user_pay/FlumeData.1521992503473
+-rw-r--r--   1 bigdata supergroup   26501837 2018-03-25 08:42 /data/graduation/user_pay/FlumeData.1521992533554
+-rw-r--r--   1 bigdata supergroup   22999410 2018-03-25 08:43 /data/graduation/user_pay/FlumeData.1521992563598
+-rw-r--r--   1 bigdata supergroup   26214942 2018-03-25 08:43 /data/graduation/user_pay/FlumeData.1521992593638
+-rw-r--r--   1 bigdata supergroup   25844324 2018-03-25 08:44 /data/graduation/user_pay/FlumeData.1521992623699
+-rw-r--r--   1 bigdata supergroup   24219203 2018-03-25 08:44 /data/graduation/user_pay/FlumeData.1521992653762
+-rw-r--r--   1 bigdata supergroup   27364463 2018-03-25 08:45 /data/graduation/user_pay/FlumeData.1521992683829
+-rw-r--r--   1 bigdata supergroup   26470176 2018-03-25 08:45 /data/graduation/user_pay/FlumeData.1521992713871
+-rw-r--r--   1 bigdata supergroup   24853979 2018-03-25 08:46 /data/graduation/user_pay/FlumeData.1521992743990
+-rw-r--r--   1 bigdata supergroup   23570230 2018-03-25 08:46 /data/graduation/user_pay/FlumeData.1521992774054
+-rw-r--r--   1 bigdata supergroup   21778554 2018-03-25 08:47 /data/graduation/user_pay/FlumeData.1521992804125
+-rw-r--r--   1 bigdata supergroup   23334605 2018-03-25 08:47 /data/graduation/user_pay/FlumeData.1521992834212
+-rw-r--r--   1 bigdata supergroup   23111979 2018-03-25 08:48 /data/graduation/user_pay/FlumeData.1521992864270
+-rw-r--r--   1 bigdata supergroup   23860871 2018-03-25 08:48 /data/graduation/user_pay/FlumeData.1521992894338
+-rw-r--r--   1 bigdata supergroup   27486613 2018-03-25 08:49 /data/graduation/user_pay/FlumeData.1521992924393
+-rw-r--r--   1 bigdata supergroup   24029949 2018-03-25 08:49 /data/graduation/user_pay/FlumeData.1521992954449
+-rw-r--r--   1 bigdata supergroup   25411389 2018-03-25 08:50 /data/graduation/user_pay/FlumeData.1521992984492
+-rw-r--r--   1 bigdata supergroup   25389706 2018-03-25 08:50 /data/graduation/user_pay/FlumeData.1521993014567
+-rw-r--r--   1 bigdata supergroup   23415865 2018-03-25 08:51 /data/graduation/user_pay/FlumeData.1521993044669
+-rw-r--r--   1 bigdata supergroup   22878357 2018-03-25 08:51 /data/graduation/user_pay/FlumeData.1521993074737
+-rw-r--r--   1 bigdata supergroup   25948842 2018-03-25 08:52 /data/graduation/user_pay/FlumeData.1521993104797
+-rw-r--r--   1 bigdata supergroup   23611486 2018-03-25 08:52 /data/graduation/user_pay/FlumeData.1521993134838
+-rw-r--r--   1 bigdata supergroup   24093424 2018-03-25 08:53 /data/graduation/user_pay/FlumeData.1521993164882
+-rw-r--r--   1 bigdata supergroup   25753640 2018-03-25 08:53 /data/graduation/user_pay/FlumeData.1521993194921
+-rw-r--r--   1 bigdata supergroup   26526192 2018-03-25 08:54 /data/graduation/user_pay/FlumeData.1521993224980
+-rw-r--r--   1 bigdata supergroup   28730272 2018-03-25 08:54 /data/graduation/user_pay/FlumeData.1521993255020
+-rw-r--r--   1 bigdata supergroup   23919938 2018-03-25 08:55 /data/graduation/user_pay/FlumeData.1521993285081
+-rw-r--r--   1 bigdata supergroup   23407833 2018-03-25 08:55 /data/graduation/user_pay/FlumeData.1521993315121
+-rw-r--r--   1 bigdata supergroup   25077109 2018-03-25 08:56 /data/graduation/user_pay/FlumeData.1521993345176
+-rw-r--r--   1 bigdata supergroup   24649627 2018-03-25 08:56 /data/graduation/user_pay/FlumeData.1521993375218
+-rw-r--r--   1 bigdata supergroup   22582642 2018-03-25 08:57 /data/graduation/user_pay/FlumeData.1521993405254
+-rw-r--r--   1 bigdata supergroup   23764442 2018-03-25 08:57 /data/graduation/user_pay/FlumeData.1521993435328
+-rw-r--r--   1 bigdata supergroup    4446510 2018-03-25 08:58 /data/graduation/user_pay/FlumeData.1521993465393
+[bigdata@bigdata conf]$ 
+
+
+
+
+
+
+
+
+
+[bigdata@bigdata conf]$ hdfs dfs -ls /data/graduation/user_view/
+Found 28 items
+-rw-r--r--   1 bigdata supergroup    2612125 2018-03-25 08:14 /data/graduation/user_view/FlumeData.1521990805050
+-rw-r--r--   1 bigdata supergroup    1567329 2018-03-25 08:14 /data/graduation/user_view/FlumeData.1521990865878
+-rw-r--r--   1 bigdata supergroup  122587512 2018-03-25 08:24 /data/graduation/user_view/FlumeData.1521991374825
+-rw-r--r--   1 bigdata supergroup      10739 2018-03-25 08:25 /data/graduation/user_view/FlumeData.1521991533232
+-rw-r--r--   1 bigdata supergroup     106109 2018-03-25 08:26 /data/graduation/user_view/FlumeData.1521991568767
+-rw-r--r--   1 bigdata supergroup    2643825 2018-03-25 08:27 /data/graduation/user_view/FlumeData.1521991612408
+-rw-r--r--   1 bigdata supergroup    5251273 2018-03-25 08:28 /data/graduation/user_view/FlumeData.1521991712193
+-rw-r--r--   1 bigdata supergroup    5273530 2018-03-25 08:28 /data/graduation/user_view/FlumeData.1521991712194
+-rw-r--r--   1 bigdata supergroup    5236733 2018-03-25 08:28 /data/graduation/user_view/FlumeData.1521991712195
+-rw-r--r--   1 bigdata supergroup    5264513 2018-03-25 08:28 /data/graduation/user_view/FlumeData.1521991712196
+-rw-r--r--   1 bigdata supergroup    5261834 2018-03-25 08:28 /data/graduation/user_view/FlumeData.1521991712197
+-rw-r--r--   1 bigdata supergroup    5238212 2018-03-25 08:29 /data/graduation/user_view/FlumeData.1521991712198
+-rw-r--r--   1 bigdata supergroup    5257256 2018-03-25 08:29 /data/graduation/user_view/FlumeData.1521991712199
+-rw-r--r--   1 bigdata supergroup    5275747 2018-03-25 08:29 /data/graduation/user_view/FlumeData.1521991712200
+-rw-r--r--   1 bigdata supergroup    5256956 2018-03-25 08:29 /data/graduation/user_view/FlumeData.1521991712201
+-rw-r--r--   1 bigdata supergroup    5232385 2018-03-25 08:29 /data/graduation/user_view/FlumeData.1521991712202
+-rw-r--r--   1 bigdata supergroup    5247219 2018-03-25 08:29 /data/graduation/user_view/FlumeData.1521991712203
+-rw-r--r--   1 bigdata supergroup    5256479 2018-03-25 08:29 /data/graduation/user_view/FlumeData.1521991712204
+-rw-r--r--   1 bigdata supergroup    5234050 2018-03-25 08:29 /data/graduation/user_view/FlumeData.1521991712205
+-rw-r--r--   1 bigdata supergroup    5232964 2018-03-25 08:29 /data/graduation/user_view/FlumeData.1521991712206
+-rw-r--r--   1 bigdata supergroup    5252794 2018-03-25 08:29 /data/graduation/user_view/FlumeData.1521991712207
+-rw-r--r--   1 bigdata supergroup    5287373 2018-03-25 08:29 /data/graduation/user_view/FlumeData.1521991712208
+-rw-r--r--   1 bigdata supergroup    5238418 2018-03-25 08:29 /data/graduation/user_view/FlumeData.1521991712209
+-rw-r--r--   1 bigdata supergroup    5253582 2018-03-25 08:29 /data/graduation/user_view/FlumeData.1521991712210
+-rw-r--r--   1 bigdata supergroup    5246430 2018-03-25 08:29 /data/graduation/user_view/FlumeData.1521991712211
+-rw-r--r--   1 bigdata supergroup    5252214 2018-03-25 08:29 /data/graduation/user_view/FlumeData.1521991712212
+-rw-r--r--   1 bigdata supergroup    5242624 2018-03-25 08:29 /data/graduation/user_view/FlumeData.1521991712213
+-rw-r--r--   1 bigdata supergroup     576610 2018-03-25 08:30 /data/graduation/user_view/FlumeData.1521991712214
+[bigdata@bigdata conf]$ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+（2）任务2:--第二种方式：利用Sqoop2 将MySQL 中shop_info 表导入到HDFS 中
+
+A、安装并配置Sqoop，参见：
+
+http://blog.csdn.net/m_signals/article/details/53189424
+http://blog.csdn.net/u012842205/article/details/52344196
+*****************************************************************
+
+[zkpk@master ~]$ cd sqoop
+[zkpk@master sqoop]$ ls
+bin  CHANGELOG.txt  conf  docs  extra  LICENSE.txt  logs  NOTICE.txt  README.txt  server  shell  tools
+[zkpk@master sqoop]$ cd bin
+[zkpk@master bin]$ ls
+BASEDIR  sqoop2-server  sqoop2-shell  sqoop2-tool  sqoop.sh  sqoop-sys.sh
+[zkpk@master bin]$ ./sqoop2-tool
+Setting conf dir: /home/zkpk/sqoop/bin/../conf
+Sqoop home directory: /home/zkpk/sqoop
+Usage: sqoop.sh tool TOOL_NAME [TOOL_ARGS]
+[zkpk@master bin]$ ./sqoop2-tool upgrade
+Setting conf dir: /home/zkpk/sqoop/bin/../conf
+Sqoop home directory: /home/zkpk/sqoop
+Sqoop tool executor:
+        Version: 1.99.7
+        Revision: 435d5e61b922a32d7bce567fe5fb1a9c0d9b1bbb
+        Compiled on Tue Jul 19 16:08:27 PDT 2016 by abefine
+Running tool: class org.apache.sqoop.tools.tool.UpgradeTool
+0    [main] INFO  org.apache.sqoop.core.PropertiesConfigurationProvider  - Starting config file poller thread
+Tool class org.apache.sqoop.tools.tool.UpgradeTool has finished correctly.
+[zkpk@master bin]$ ./sqoop2-tool verify
+Setting conf dir: /home/zkpk/sqoop/bin/../conf
+Sqoop home directory: /home/zkpk/sqoop
+Sqoop tool executor:
+        Version: 1.99.7
+        Revision: 435d5e61b922a32d7bce567fe5fb1a9c0d9b1bbb
+        Compiled on Tue Jul 19 16:08:27 PDT 2016 by abefine
+Running tool: class org.apache.sqoop.tools.tool.VerifyTool
+0    [main] INFO  org.apache.sqoop.core.SqoopServer  - Initializing Sqoop server.
+7    [main] INFO  org.apache.sqoop.core.PropertiesConfigurationProvider  - Starting config file poller thread
+SLF4J: Class path contains multiple SLF4J bindings.
+SLF4J: Found binding in [jar:file:/home/zkpk/hadoop-2.7.3/share/hadoop/common/lib/slf4j-log4j12-1.7.10.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/home/zkpk/apache-hive-2.1.1-bin/lib/log4j-slf4j-impl-2.4.1.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+Verification was successful.
+Tool class org.apache.sqoop.tools.tool.VerifyTool has finished correctly.
+[zkpk@master bin]$ ls
+BASEDIR  sqoop2-server  sqoop2-shell  sqoop2-tool  sqoop.sh  sqoop-sys.sh
+[zkpk@master bin]$ cd
+[zkpk@master ~]$ ls
+apache-flume-1.7.0-bin  flume          kafka_2.10-0.10.1.1  spark-2.1.0-bin-hadoop2.7   startyarn.sh
+apache-hive-2.1.1-bin   hadoop         logs                 sqoop                       startzeppelin.sh
+apache-maven-3.3.9      hadoop-2.7.3   metastore_db         sqoop-1.99.7-bin-hadoop200  startzookeeper.sh
+clihive.sh              hadoop_bin     pi2.sh               starthbase.sh               tmp
+clipresto.sh            hadoop_config  pi.sh                starthive.sh                zeppelin
+cliredis.sh             hadoopdata     presto               startkafka.sh               zeppelin-0.7.1-bin-all
+data                    hbase          presto-server-0.166  startmaster.sh              zookeeper
+derby.log               hbase-1.2.4    redis-3.2.8          startmysql.sh               zookeeper-3.4.9
+dfsadmin-report.sh      hive           soppresto.sh         startpresto.sh              zookeeper.out
+dump.rdb                kafka          spark                startredis.sh
+[zkpk@master ~]$
+[zkpk@master ~]$
+[zkpk@master ~]$ cp startredis.sh startsqoop.sh
+[zkpk@master ~]$ vi startsqoop.sh
+[zkpk@master ~]$ ./startsqoop.sh
+./startsqoop.sh: line 2: sqoop2-server: command not found
+[zkpk@master ~]$ source .bash_profile
+[zkpk@master ~]$ ./startsqoop.sh
+Setting conf dir: /home/zkpk/sqoop-1.99.7-bin-hadoop200/bin/../conf
+Sqoop home directory: /home/zkpk/sqoop-1.99.7-bin-hadoop200
+Starting the Sqoop2 server...
+0    [main] INFO  org.apache.sqoop.core.SqoopServer  - Initializing Sqoop server.
+7    [main] INFO  org.apache.sqoop.core.PropertiesConfigurationProvider  - Starting config file poller thread
+SLF4J: Class path contains multiple SLF4J bindings.
+SLF4J: Found binding in [jar:file:/home/zkpk/hadoop-2.7.3/share/hadoop/common/lib/slf4j-log4j12-1.7.10.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/home/zkpk/apache-hive-2.1.1-bin/lib/log4j-slf4j-impl-2.4.1.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+Sqoop2 server started.
+[zkpk@master ~]$
+
+
+[zkpk@master ~]$ jps
+3536 ResourceManager
+3648 NodeManager
+2802 SecondaryNameNode
+10146 SqoopJettyServer
+3028 RunJar
+3780 JobHistoryServer
+3029 RunJar
+2599 DataNode
+2487 NameNode
+10186 Jps
+2987 QuorumPeerMain
+[zkpk@master ~]$
+
+
+
+B、Sqoop使用，参见：
+
+http://blog.csdn.net/lusyoe/article/details/60478226
+**********************************************************************
+
+[zkpk@master ~]$
+[zkpk@master ~]$ sqoop2-shell
+Setting conf dir: /home/zkpk/sqoop-1.99.7-bin-hadoop200/bin/../conf
+Sqoop home directory: /home/zkpk/sqoop-1.99.7-bin-hadoop200
+Mar 22, 2018 6:12:32 PM java.util.prefs.FileSystemPreferences$1 run
+INFO: Created user preferences directory.
+Sqoop Shell: Type 'help' or '\h' for help.
+
+sqoop:000>
+sqoop:000>
+
+****************************************************************
+http://blog.csdn.net/lusyoe/article/details/60478226
+
+[zkpk@master bin]$ ./sqoop2-shell
+Setting conf dir: /home/zkpk/sqoop/bin/../conf
+Sqoop home directory: /home/zkpk/sqoop
+Sqoop Shell: Type 'help' or '\h' for help.
+
+sqoop:000>
+sqoop:000> set server --host 127.0.0.1 --port 12000 --webapp sqoop
+Server is set successfully
+sqoop:000>
+sqoop:000>
+
+
+sqoop:000> show version -all
+client version:
+  Sqoop 1.99.7 source revision 435d5e61b922a32d7bce567fe5fb1a9c0d9b1bbb
+  Compiled by abefine on Tue Jul 19 16:08:27 PDT 2016
+0    [main] WARN  org.apache.hadoop.util.NativeCodeLoader  - Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+server version:
+  Sqoop 1.99.7 source revision 435d5e61b922a32d7bce567fe5fb1a9c0d9b1bbb
+  Compiled by abefine on Tue Jul 19 16:08:27 PDT 2016
+API versions:
+  [v1]
+sqoop:000>
+
+
+sqoop:000>
+sqoop:000> show connector
++------------------------+---------+------------------------------------------------------------+----------------------+
+|          Name          | Version |                           Class                            | Supported Directions |
++------------------------+---------+------------------------------------------------------------+----------------------+
+| generic-jdbc-connector | 1.99.7  | org.apache.sqoop.connector.jdbc.GenericJdbcConnector       | FROM/TO              |
+| kite-connector         | 1.99.7  | org.apache.sqoop.connector.kite.KiteConnector              | FROM/TO              |
+| oracle-jdbc-connector  | 1.99.7  | org.apache.sqoop.connector.jdbc.oracle.OracleJdbcConnector | FROM/TO              |
+| ftp-connector          | 1.99.7  | org.apache.sqoop.connector.ftp.FtpConnector                | TO                   |
+| hdfs-connector         | 1.99.7  | org.apache.sqoop.connector.hdfs.HdfsConnector              | FROM/TO              |
+| kafka-connector        | 1.99.7  | org.apache.sqoop.connector.kafka.KafkaConnector            | TO                   |
+| sftp-connector         | 1.99.7  | org.apache.sqoop.connector.sftp.SftpConnector              | TO                   |
++------------------------+---------+------------------------------------------------------------+----------------------+
+sqoop:000>
+
+sqoop:000>
+sqoop:000>
+sqoop:000>  create link -connector generic-jdbc-connector
+Creating link for connector with name generic-jdbc-connector
+Please fill following values to create new link object
+Name: MySQL
+
+Database connection
+
+Driver class: com.mysql.jdbc.Driver
+Connection String: jdbc:mysql://slave:3306/graduation
+Username: root
+Password: ****
+Fetch Size:
+Connection Properties:
+There are currently 0 values in the map:
+entry#
+
+SQL Dialect
+
+Identifier enclose:
+New link was successfully created with validation status OK and name MySQL
+sqoop:000>
+sqoop:000> show link
++-------+------------------------+---------+
+| Name  |     Connector Name     | Enabled |
++-------+------------------------+---------+
+| MySQL | generic-jdbc-connector | true    |
++-------+------------------------+---------+
+sqoop:000>
+sqoop:000>
+sqoop:000>
+sqoop:000> create link -connector hdfs-connector
+Creating link for connector with name hdfs-connector
+Please fill following values to create new link object
+Name: HDFS
+
+HDFS cluster
+
+URI: hdfs://master:9000
+Conf directory: /home/zkpk/hadoop-2.7.3/etc/hadoop
+Additional configs::
+There are currently 0 values in the map:
+entry#
+New link was successfully created with validation status OK and name HDFS
+sqoop:000>
+sqoop:000> show link
++-------+------------------------+---------+
+| Name  |     Connector Name     | Enabled |
++-------+------------------------+---------+
+| MySQL | generic-jdbc-connector | true    |
+| HDFS  | hdfs-connector         | true    |
++-------+------------------------+---------+
+sqoop:000>
+sqoop:000>
+
+ 
+sqoop:000>
+sqoop:000> create job -f "MySQL" -t "HDFS"
+Creating job for links with from name MySQL and to name HDFS
+Please fill following values to create new job object
+Name: mysqlTOhdfs
+
+Database source
+
+Schema name: graduation
+Table name: shop_info
+SQL statement:
+Column names:
+There are currently 0 values in the list:
+element#
+Partition column:
+Partition column nullable:
+Boundary query:
+
+Incremental read
+
+Check column:
+Last value:
+
+Target configuration
+
+Override null value:
+Null value:
+File format:
+  0 : TEXT_FILE
+  1 : SEQUENCE_FILE
+  2 : PARQUET_FILE
+Choose: 0
+Compression codec:
+  0 : NONE
+  1 : DEFAULT
+  2 : DEFLATE
+  3 : GZIP
+  4 : BZIP2
+  5 : LZO
+  6 : LZ4
+  7 : SNAPPY
+  8 : CUSTOM
+Choose: 0
+Custom codec:
+Output directory: /data/graduation/IJCAI17_dataset2
+Append mode:
+
+Throttling resources
+
+Extractors:
+Loaders:
+
+Classpath configuration
+
+Extra mapper jars:
+There are currently 0 values in the list:
+element#
+New job was successfully created with validation status OK  and name mysqlTOhdfs
+sqoop:000>
+sqoop:000>
+
+
+
+sqoop:000>
+sqoop:000>
+sqoop:000> show link
++-------+------------------------+---------+
+| Name  |     Connector Name     | Enabled |
++-------+------------------------+---------+
+| MySQL | generic-jdbc-connector | true    |
+| HDFS  | hdfs-connector         | true    |
++-------+------------------------+---------+
+sqoop:000> show connector
++------------------------+---------+------------------------------------------------------------+----------------------+
+|          Name          | Version |                           Class                            | Supported Directions |
++------------------------+---------+------------------------------------------------------------+----------------------+
+| generic-jdbc-connector | 1.99.7  | org.apache.sqoop.connector.jdbc.GenericJdbcConnector       | FROM/TO              |
+| kite-connector         | 1.99.7  | org.apache.sqoop.connector.kite.KiteConnector              | FROM/TO              |
+| oracle-jdbc-connector  | 1.99.7  | org.apache.sqoop.connector.jdbc.oracle.OracleJdbcConnector | FROM/TO              |
+| ftp-connector          | 1.99.7  | org.apache.sqoop.connector.ftp.FtpConnector                | TO                   |
+| hdfs-connector         | 1.99.7  | org.apache.sqoop.connector.hdfs.HdfsConnector              | FROM/TO              |
+| kafka-connector        | 1.99.7  | org.apache.sqoop.connector.kafka.KafkaConnector            | TO                   |
+| sftp-connector         | 1.99.7  | org.apache.sqoop.connector.sftp.SftpConnector              | TO                   |
++------------------------+---------+------------------------------------------------------------+----------------------+
+sqoop:000>
+sqoop:000> show job
++----+-------------+--------------------------------+-----------------------+---------+
+| Id |    Name     |         From Connector         |     To Connector      | Enabled |
++----+-------------+--------------------------------+-----------------------+---------+
+| 1  | mysqlTOhdfs | MySQL (generic-jdbc-connector) | HDFS (hdfs-connector) | true    |
++----+-------------+--------------------------------+-----------------------+---------+
+sqoop:000>
+sqoop:000> status job -n mysqlTOhdfs
+Submission details
+Job Name: mysqlTOhdfs
+Server URL: http://127.0.0.1:12000/sqoop/
+Created by: zkpk
+Creation date: 2018-03-22 19:06:01 CST
+Lastly updated by: zkpk
+External ID: job_1521638705113_0005
+        http://master:18088/proxy/application_1521638705113_0005/
+2018-03-22 19:10:09 CST: SUCCEEDED
+Counters:
+        org.apache.hadoop.mapreduce.FileSystemCounter
+                FILE_LARGE_READ_OPS: 0
+                FILE_WRITE_OPS: 0
+                HDFS_READ_OPS: 10
+                HDFS_BYTES_READ: 1467
+                HDFS_LARGE_READ_OPS: 0
+                FILE_READ_OPS: 0
+                FILE_BYTES_WRITTEN: 2818621
+                FILE_BYTES_READ: 0
+                HDFS_WRITE_OPS: 10
+                HDFS_BYTES_WRITTEN: 193282
+        org.apache.hadoop.mapreduce.lib.output.FileOutputFormatCounter
+                BYTES_WRITTEN: 0
+        org.apache.hadoop.mapreduce.lib.input.FileInputFormatCounter
+                BYTES_READ: 0
+        org.apache.hadoop.mapreduce.JobCounter
+                TOTAL_LAUNCHED_MAPS: 10
+                MB_MILLIS_MAPS: 1003152384
+                VCORES_MILLIS_MAPS: 979641
+                SLOTS_MILLIS_MAPS: 979641
+                OTHER_LOCAL_MAPS: 10
+                MILLIS_MAPS: 979641
+        org.apache.sqoop.submission.counter.SqoopCounters
+                ROWS_READ: 2000
+                ROWS_WRITTEN: 2000
+        org.apache.hadoop.mapreduce.TaskCounter
+                SPILLED_RECORDS: 0
+                MERGED_MAP_OUTPUTS: 0
+                VIRTUAL_MEMORY_BYTES: 21253234688
+                MAP_INPUT_RECORDS: 0
+                SPLIT_RAW_BYTES: 1467
+                MAP_OUTPUT_RECORDS: 2000
+                FAILED_SHUFFLE: 0
+                PHYSICAL_MEMORY_BYTES: 2645200896
+                GC_TIME_MILLIS: 109006
+                CPU_MILLISECONDS: 138450
+                COMMITTED_HEAP_BYTES: 1521483776
+Job executed successfully
+sqoop:000>
+
+
+
+C、查看导入结果
+
+**********************************************************************
+[zkpk@slave ~]$
+[zkpk@slave ~]$ hdfs dfs -ls /data/graduation/
+Found 3 items
+drwxr-xr-x   - zkpk supergroup          0 2018-03-22 19:19 /data/graduation/IJCAI17_dataset0
+drwxr-xr-x   - zkpk supergroup          0 2018-03-22 19:20 /data/graduation/IJCAI17_dataset1
+drwxr-xr-x   - zkpk supergroup          0 2018-03-22 19:09 /data/graduation/IJCAI17_dataset2
+[zkpk@slave ~]$
+[zkpk@slave ~]$
+[zkpk@slave ~]$ hdfs dfs -ls /data/graduation/IJCAI17_dataset0
+Found 1 items
+-rw-r--r--   1 zkpk supergroup 2296273496 2018-03-22 19:19 /data/graduation/IJCAI17_dataset0/user_pay.txt
+
+
+[zkpk@slave ~]$ hdfs dfs -ls /data/graduation/IJCAI17_dataset1
+Found 1 items
+-rw-r--r--   1 zkpk supergroup  183141282 2018-03-22 19:20 /data/graduation/IJCAI17_dataset1/user_view.txt
+
+[zkpk@slave ~]$ hdfs dfs -ls /data/graduation/IJCAI17_dataset2
+Found 10 items
+-rw-r--r--   1 zkpk supergroup          0 2018-03-22 19:06 /data/graduation/IJCAI17_dataset2/2351d92d-19a9-441a-8c6d-1b22fb3f7247.txt
+-rw-r--r--   1 zkpk supergroup          0 2018-03-22 19:09 /data/graduation/IJCAI17_dataset2/33104623-7623-4ddf-a16e-8d434c8bcbae.txt
+-rw-r--r--   1 zkpk supergroup          0 2018-03-22 19:09 /data/graduation/IJCAI17_dataset2/4ffc1e67-a178-4d78-9572-2a7ddd3bb586.txt
+-rw-r--r--   1 zkpk supergroup          0 2018-03-22 19:08 /data/graduation/IJCAI17_dataset2/a1569e9e-ef83-4273-8a3e-c4aa254b56ba.txt
+-rw-r--r--   1 zkpk supergroup          0 2018-03-22 19:08 /data/graduation/IJCAI17_dataset2/af63c317-9116-4844-8a08-960e123a6c4f.txt
+-rw-r--r--   1 zkpk supergroup          0 2018-03-22 19:09 /data/graduation/IJCAI17_dataset2/c7ef7dab-a6ce-4d36-995e-57a1b17262b9.txt
+-rw-r--r--   1 zkpk supergroup          0 2018-03-22 19:08 /data/graduation/IJCAI17_dataset2/da7c724b-6d94-4a3a-8e65-14f63dc4b1bd.txt
+-rw-r--r--   1 zkpk supergroup          0 2018-03-22 19:06 /data/graduation/IJCAI17_dataset2/e2e9fe7d-c2e5-45d2-b692-7e84bba90a5d.txt
+-rw-r--r--   1 zkpk supergroup     193282 2018-03-22 19:06 /data/graduation/IJCAI17_dataset2/e4c2cf86-0670-4312-a867-f1bf8baf922c.txt
+-rw-r--r--   1 zkpk supergroup          0 2018-03-22 19:06 /data/graduation/IJCAI17_dataset2/ff404642-86f0-4248-8583-11f7e3d2626f.txt
+[zkpk@slave ~]$
+
+
+
+
+
+
+
+
+
+
+
+
+
+
