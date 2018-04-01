@@ -1,9 +1,6 @@
 package org.training.spark.graduation2;
 
 import kafka.serializer.StringDecoder;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.Producer;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -11,8 +8,7 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.api.java.function.VoidFunction;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SQLContext;
+import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
@@ -37,37 +33,6 @@ import java.util.*;
  b）每个城市发生的交易次数，并存储redis，其中key 为“交易+<城市名称>”,value 为累计的次数
  */
 public class JavaKafkaShopCityAnalytics {
-//
-//    private static void readMySQL(SQLContext sqlContext){
-//        //jdbc.url=jdbc:mysql://localhost:3306/database
-//        String url = "jdbc:mysql://localhost:3306/test";
-//        //查找的表名
-//        String table = "user_test";
-//        //增加数据库的用户名(user)密码(password),指定test数据库的驱动(driver)
-//        Properties connectionProperties = new Properties();
-//        connectionProperties.put("user","root");
-//        connectionProperties.put("password","123456");
-//        connectionProperties.put("driver","com.mysql.jdbc.Driver");
-//
-//        //SparkJdbc读取Postgresql的products表内容
-//        System.out.println("读取test数据库中的user_test表内容");
-//        // 读取表中所有数据
-//        DataSet<Row> jdbcDF;
-//        jdbcDF = sqlContext.read().jdbc(url,table,connectionProperties).select("*").toDF();
-//        //显示数据
-//        jdbcDF.show();
-//    }
-//
-//    public static String getCityOfShopFromMySQL(String shopId){
-//        JavaSparkContext sparkContext = new JavaSparkContext(new SparkConf().setAppName("SparkMysql").setMaster("local[1]"));
-//        SQLContext sqlContext = new SQLContext(sparkContext);
-//        //读取mysql数据
-//        readMySQL(sqlContext);
-//
-//        //停止SparkContext
-//        sparkContext.stop();
-//        return "北京";
-//    }
 
     public static Map<String, String> shopCityMap = null;
     public static Map<String, String> getShopCityMap(String dataPath){
@@ -125,6 +90,11 @@ public class JavaKafkaShopCityAnalytics {
 
         JavaStreamingContext ssc = new JavaStreamingContext(conf, Durations.seconds(5));
 
+        //从MySQL或文本中读取数据库，作为广播变量共享使用
+        Map<String, String> shopCityMap = getShopCityMap(dataPath);
+        JavaSparkContext jsc  = ssc.sparkContext();
+        Broadcast<Map<String, String>> broadcastCountryMap = jsc.broadcast(shopCityMap);
+
         // Kafka configurations
         String[] topics = KafkaRedisConfig.KAFKA_USER_PAY_TOPIC.split("\\,");
         System.out.println("Topics: " + Arrays.toString(topics));
@@ -175,15 +145,23 @@ public class JavaKafkaShopCityAnalytics {
                         while(partitionOfRecords.hasNext()) {
                             try {
                                 Tuple2<String, Long> pair = partitionOfRecords.next();
-                                String shopid = "jiaoyi"+pair._1 ();
-                                String city = "交易"+getCityOfShop(pair._1 (),dataPath);
-                                long clickCount = pair._2();
-                                //jedis.hincrBy(clickHashKey, shopid, clickCount);
-                                jedis.incrBy(shopid, clickCount);
-                                System.out.println("Update shopid " + shopid + " inc " + clickCount);
+                                String shopidKey = "jiaoyi"+pair._1 ();
 
-                                jedis.incrBy(city, clickCount);
-                                System.out.println("Update city " + city + " inc " + clickCount);
+                                //读取广播变量Map，根据shopd获取cityName
+                                String cityName = broadcastCountryMap.getValue().get(pair._1 ());
+                                String cityKey = "交易"+cityName;
+                                //String cityKey = "交易"+getCityOfShop(pair._1 (),dataPath);
+
+                                //交易量
+                                long clickCount = pair._2();
+
+                                //将店铺交易增量写入Redis
+                                jedis.incrBy(shopidKey, clickCount);
+                                System.out.println("Update shop " + shopidKey + " inc " + clickCount);
+
+                                //将城市交易增量写入Redis
+                                jedis.incrBy(cityKey, clickCount);
+                                System.out.println("Update city " + cityKey + " inc " + clickCount);
 
                             } catch(Exception e) {
                                 System.out.println("error:" + e);
