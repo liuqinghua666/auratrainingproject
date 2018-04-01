@@ -130,9 +130,13 @@ public class JavaSQLAliPayAnalyzer {
 
         Dataset<Row>  shopDs = getShopInfoDS(spark, dataPath);
         shopDs.registerTempTable("shop_info");
+        //做缓存
+        shopDs.cache();
 
         Dataset<Row>  payDs = getUserPayDS(spark, dataPath);
         payDs.registerTempTable("user_pay");
+        //做缓存
+        payDs.cache();
 
         //shop_id,city_name,location_id,per_pay,score,comment_cnt,shop_level,cate_1_name,cate_2_name,cate_3_name
         System.out.println("^^^^^^^^-------平均日交易额最大的前10 个商家，并输出他们各自的交易额-----");
