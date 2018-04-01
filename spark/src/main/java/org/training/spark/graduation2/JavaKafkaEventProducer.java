@@ -1,21 +1,13 @@
 package org.training.spark.graduation2;
 
-import com.alibaba.fastjson.JSONObject;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.spark.SparkConf;
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SparkSession;
+import org.spark_project.guava.util.concurrent.RateLimiter;
 import org.training.spark.util.KafkaRedisConfig;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
-import java.util.Random;
 
 /**
  * Created by qinghua.liu on 3/29/18.
@@ -53,6 +45,10 @@ public class JavaKafkaEventProducer {
         }
         String fileName =  JavaSQLAliPayAnalyzer.getOSPath(dataPath+"/user_pay.txt");
 
+        //使用RateLimiter做流量控制
+        int maxRatePerSecond = 10;
+        RateLimiter limiter = RateLimiter.create(maxRatePerSecond);;
+
         File file = new File(fileName);
         BufferedReader reader = null;
         try {
@@ -67,6 +63,7 @@ public class JavaKafkaEventProducer {
                 //准备数据
                 String[] row = tempString.split(",");
                 if(row.length>=3) {
+                    limiter.acquire();//每10ms产生1个消息
                     String key = "" + row[0];//user_id
                     String value = "" + row[1] + "," + row[2];//shop_id+”,”+time_stamp
                     // 推送数据
@@ -74,7 +71,7 @@ public class JavaKafkaEventProducer {
                     System.out.println("Message[" + line + "] sent: " + key + "=>" + value);
                     producer.send(new ProducerRecord(topic, key, value));
                     line++;
-                    Thread.sleep(10);
+//                    Thread.sleep(10);
                 }
             }
             reader.close();
